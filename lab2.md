@@ -107,7 +107,7 @@ only needs to support the COUNT aggregate, since the other operations do not
 make sense for strings.  
 
 *  Implement the `Aggregate` operator.  As with other
-operators, aggregates implement the `DbIterator` interface
+operators, aggregates implement the `OpIterator` interface
 so that they can be placed in SimpleDB query plans.  Note that the
 output of an `Aggregate` operator is an aggregate value of an
 entire group for each call to `next()`, and that the
@@ -119,7 +119,7 @@ transactions at this point.
 
 *  Implement the `Insert` and `Delete` operators.
 Like all operators,  `Insert` and `Delete` implement
-`DbIterator`, accepting a stream of tuples to insert or delete
+`OpIterator`, accepting a stream of tuples to insert or delete
 and outputting a single tuple with an integer field that indicates the
 number of tuples inserted or deleted.  These operators will need to call
 the appropriate methods in `BufferPool` that actually modify the
@@ -145,14 +145,14 @@ At this point you should be able to pass all of the tests in the ant
 
 
 Finally, you might notice that the iterators in this lab extend the
-`Operator` class instead of implementing the DbIterator
+`Operator` class instead of implementing the OpIterator
 interface.  Because the implementation of <tt>next</tt>/<tt>hasNext</tt>
 is often repetitive, annoying, and error-prone, `Operator`
 implements this logic generically, and only requires that you implement
 a simpler <tt>readNext</tt>.  Feel free to use this style of
-implementation, or just implement the `DbIterator` interface if you prefer.
-To implement the DbIterator interface, remove `extends Operator`
-from iterator classes, and in its place put `implements DbIterator`.
+implementation, or just implement the `OpIterator` interface if you prefer.
+To implement the OpIterator interface, remove `extends Operator`
+from iterator classes, and in its place put `implements OpIterator`.
 
 
 
@@ -161,7 +161,7 @@ from iterator classes, and in its place put `implements DbIterator`.
 
 ### 2.1. Filter and Join 
 
-Recall that SimpleDB DbIterator classes implement the operations of the
+Recall that SimpleDB OpIterator classes implement the operations of the
 relational algebra. You will now implement two operators that will enable
 you to perform queries that are slightly more interesting than a table
 scan.
@@ -214,7 +214,7 @@ aggregate. The `Aggregator` is told during construction what
 operation it should use for aggregation.  Subsequently, the client code
 should call `Aggregator.mergeTupleIntoGroup()` for every tuple in the child
 iterator. After all tuples have been merged, the client can retrieve a
-DbIterator of aggregation results. Each tuple in the result is a pair of
+OpIterator of aggregation results. Each tuple in the result is a pair of
 the form `(groupValue, aggregateValue)`, unless the value
 of the group by field was `Aggregator.NO_GROUPING`, in which
 case the result is a single tuple of the form `(aggregateValue)`.
@@ -844,7 +844,7 @@ hacking on it!
  -->
 <!--  LocalWords:  runTest FilterTest simpledb src java txt JavaDoc's HeapPage
  -->
-<!--  LocalWords:  BufferPool endian DbIterator JoinPredicate getPage tableid
+<!--  LocalWords:  BufferPool endian OpIterator JoinPredicate getPage tableid
  -->
 <!--  LocalWords:  MIN HashMap insertTuple deleteTuple walkthrough
  -->
