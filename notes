@@ -1,0 +1,2 @@
+1. Java static key word:
+    Static keyword can be used with class, variable, method and block. Static members belong to the class instead of a specific instance, this means if you make a member static, you can access it without object.
