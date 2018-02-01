@@ -5,3 +5,57 @@
     A class can be made static only if it is a nested class.
         1) Nested static class doesn’t need reference of Outer class
         2) A static class cannot access non-static members of the Outer class
+
+3. @ means annotation in java
+
+4. Serializable interface
+
+5. Array vs ArrayList
+    Array: Simple fixed arrays that we create in Jave, like below
+        int arr[] new int[10]
+    ArrayList: Dynamic sized arrays in Java that implement List interface
+        ArrayList<Type> arrL = new ArrayList<Type>();
+
+   // A Java program to demonstrate differences between array
+   // and ArrayList
+   import java.util.ArrayList;
+   import java.util.Arrays;
+   
+   class Test
+   {
+       public static void main(String args[])
+       {
+           /* ........... Normal Array............. */
+           int[] arr = new int[3];
+           arr[0] = 1;
+           arr[1] = 2;
+           System.out.println(arr[0]);
+   
+           /*............ArrayList..............*/
+           // Create an arrayList with initial capacity 2
+           ArrayList<Integer> arrL = new ArrayList<Integer>(2);
+   
+           // Add elements to ArrayList
+           arrL.add(1);
+           arrL.add(2);
+   
+           // Access elements of ArrayList
+           System.out.println(arrL.get(0));
+       }
+   }
+
+6. Throws vs Throw 
+    1. throws clause is used to declare an exception and throw keyword is used to throw an exception explicitly.
+    2. If we see syntax wise then throw is followed by an instance variable and throws is followed by exception class names.
+    3. The keyword throw is used inside method body to invoke an exception and throws clause is used in method declaration (signature).
+    For example
+
+    throw
+        throw new Exception("You have some exception")
+        throw new IOException("Connection failed!!")
+
+    throws
+        public int myMethod() throws IOException, ArithmeticException, NullPointerException {}
+
+    4. You cannot declare multiple exceptions with throw. You can declare multiple exception e.g. public void method()throws IOException,SQLException.
+    5. checked exceptions can not be propagated with throw only because it is explicitly used to throw an particular exception. checked exception can be propagated with throws.

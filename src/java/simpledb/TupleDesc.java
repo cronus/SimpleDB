@@ -42,10 +42,14 @@ public class TupleDesc implements Serializable {
      * */
     public Iterator<TDItem> iterator() {
         // some code goes here
-        return null;
+        //return null;
+        return tdiL.iterator();
     }
 
     private static final long serialVersionUID = 1L;
+
+    // bocui
+    private ArrayList<TDItem> tdiL = new ArrayList<TDItem>();
 
     /**
      * Create a new TupleDesc with typeAr.length fields with fields of the
@@ -60,6 +64,12 @@ public class TupleDesc implements Serializable {
      */
     public TupleDesc(Type[] typeAr, String[] fieldAr) {
         // some code goes here
+        int l = typeAr.length;
+        for (int i = 0; i < l; i++) {
+            TDItem tdi = new TDItem(typeAr[i], fieldAr[i]);
+            tdiL.add(tdi);
+        }
+        //System.out.println(l);
     }
 
     /**
@@ -72,6 +82,11 @@ public class TupleDesc implements Serializable {
      */
     public TupleDesc(Type[] typeAr) {
         // some code goes here
+        int l = typeAr.length;
+        for (int i = 0; i < l; i++) {
+            TDItem tdi = new TDItem(typeAr[i], null);
+            tdiL.add(tdi);
+        }
     }
 
     /**
@@ -79,7 +94,8 @@ public class TupleDesc implements Serializable {
      */
     public int numFields() {
         // some code goes here
-        return 0;
+        //return 0;
+        return tdiL.size();
     }
 
     /**
@@ -93,7 +109,8 @@ public class TupleDesc implements Serializable {
      */
     public String getFieldName(int i) throws NoSuchElementException {
         // some code goes here
-        return null;
+        //return null;
+        return tdiL.get(i).fieldName;
     }
 
     /**
@@ -108,7 +125,8 @@ public class TupleDesc implements Serializable {
      */
     public Type getFieldType(int i) throws NoSuchElementException {
         // some code goes here
-        return null;
+        //return null;
+        return tdiL.get(i).fieldType;
     }
 
     /**
@@ -122,7 +140,12 @@ public class TupleDesc implements Serializable {
      */
     public int fieldNameToIndex(String name) throws NoSuchElementException {
         // some code goes here
-        return 0;
+        //return 0;
+        for (TDItem tdi : tdiL) {
+            if (tdi.fieldName == name)
+                return tdiL.indexOf(tdi);
+        }
+        throw new NoSuchElementException();
     }
 
     /**
@@ -131,7 +154,12 @@ public class TupleDesc implements Serializable {
      */
     public int getSize() {
         // some code goes here
-        return 0;
+        //return 0;
+        int size = 0;
+        for (TDItem tdi : tdiL) {
+            size += tdi.fieldType.getLen();
+        }
+        return size;
     }
 
     /**
@@ -146,7 +174,20 @@ public class TupleDesc implements Serializable {
      */
     public static TupleDesc merge(TupleDesc td1, TupleDesc td2) {
         // some code goes here
-        return null;
+        //return null;
+        int num1 = td1.numFields();
+        int num2 = td2.numFields();
+        Type[]   type12 = new Type[num1 + num2];
+        String[] s12    = new String[num1 + num2];
+        for (int i = 0; i < num1; i++) {
+            type12[i] = td1.getFieldType(i);
+            s12[i]    = td1.getFieldName(i);
+        }
+        for (int i = num1; i < num1 + num2; i++) {
+            type12[i] = td2.getFieldType(i - num1);
+            s12[i]    = td2.getFieldName(i - num1);
+        }
+        return new TupleDesc(type12, s12);
     }
 
     /**
@@ -162,7 +203,19 @@ public class TupleDesc implements Serializable {
 
     public boolean equals(Object o) {
         // some code goes here
-        return false;
+        //return false;
+        boolean equal = true;
+        TupleDesc tgt = (TupleDesc) o;
+        Iterator<TDItem> tgt_it = tgt.iterator();
+        Iterator<TDItem> src_it = tdiL.iterator();
+        while (tgt_it.hasNext()) {
+            TDItem tgt_tdi = tgt_it.next();
+            while (src_it.hasNext()) {
+                TDItem src_tdi = src_it.next();
+                equal &= (src_tdi.fieldType == tgt_tdi.fieldType);
+            }
+        }
+        return equal;
     }
 
     public int hashCode() {

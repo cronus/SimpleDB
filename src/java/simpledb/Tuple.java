@@ -13,6 +13,9 @@ public class Tuple implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    //bocui add variable
+    private final TupleDesc td;
+
     /**
      * Create a new tuple with the specified schema (type).
      *
@@ -22,6 +25,8 @@ public class Tuple implements Serializable {
      */
     public Tuple(TupleDesc td) {
         // some code goes here
+        // assign reference or hard copy? TODO 
+        this.td = td;
     }
 
     /**
@@ -29,7 +34,8 @@ public class Tuple implements Serializable {
      */
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+        //return null;
+        return this.td;
     }
 
     /**
