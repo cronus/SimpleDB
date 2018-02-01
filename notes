@@ -59,3 +59,6 @@
 
     4. You cannot declare multiple exceptions with throw. You can declare multiple exception e.g. public void method()throws IOException,SQLException.
     5. checked exceptions can not be propagated with throw only because it is explicitly used to throw an particular exception. checked exception can be propagated with throws.
+
+7. Use the string.equals(Object other) function to compare strings, not the == operator.
+    The function checks the actual contents of the string, the == operator checks whether the references to the objects are equal.

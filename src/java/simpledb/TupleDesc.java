@@ -141,9 +141,14 @@ public class TupleDesc implements Serializable {
     public int fieldNameToIndex(String name) throws NoSuchElementException {
         // some code goes here
         //return 0;
+        //System.out.println(name);
         for (TDItem tdi : tdiL) {
-            if (tdi.fieldName == name)
+            if (tdi.fieldName == null) {
+                continue;
+            }
+            if (tdi.fieldName.equals(name)) {
                 return tdiL.indexOf(tdi);
+            }
         }
         throw new NoSuchElementException();
     }
@@ -204,16 +209,23 @@ public class TupleDesc implements Serializable {
     public boolean equals(Object o) {
         // some code goes here
         //return false;
-        boolean equal = true;
+
+        // if not an TupleDesc type, return false
+        if (! (o instanceof TupleDesc))
+            return false;
+
         TupleDesc tgt = (TupleDesc) o;
+        // if not have the same number of items, return false
+        if (tgt.numFields() != tdiL.size())
+            return false;
+
+        boolean equal = true;
         Iterator<TDItem> tgt_it = tgt.iterator();
         Iterator<TDItem> src_it = tdiL.iterator();
         while (tgt_it.hasNext()) {
             TDItem tgt_tdi = tgt_it.next();
-            while (src_it.hasNext()) {
-                TDItem src_tdi = src_it.next();
-                equal &= (src_tdi.fieldType == tgt_tdi.fieldType);
-            }
+            TDItem src_tdi = src_it.next();
+            equal &= (src_tdi.fieldType == tgt_tdi.fieldType);
         }
         return equal;
     }
