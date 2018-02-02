@@ -14,7 +14,8 @@ public class Tuple implements Serializable {
     private static final long serialVersionUID = 1L;
 
     //bocui add variable
-    private final TupleDesc td;
+    private TupleDesc td;
+    private Field[] f = new Field[100];
 
     /**
      * Create a new tuple with the specified schema (type).
@@ -67,6 +68,7 @@ public class Tuple implements Serializable {
      */
     public void setField(int i, Field f) {
         // some code goes here
+        this.f[i] = f;
     }
 
     /**
@@ -77,7 +79,8 @@ public class Tuple implements Serializable {
      */
     public Field getField(int i) {
         // some code goes here
-        return null;
+        //return null;
+        return this.f[i];
     }
 
     /**
