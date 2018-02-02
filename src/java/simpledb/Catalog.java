@@ -18,12 +18,19 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Catalog {
 
+    // bocui
+    // implement the tables in Catalog as ConcurrentHashMap
+    // key is the Id of a file, content is the file
+    private ConcurrentHashMap tables = null;
+
+
     /**
      * Constructor.
      * Creates a new, empty catalog.
      */
     public Catalog() {
         // some code goes here
+        tables = new ConcurrentHashMap();
     }
 
     /**
@@ -37,6 +44,7 @@ public class Catalog {
      */
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
+        int Id = file.getId();
     }
 
     public void addTable(DbFile file, String name) {

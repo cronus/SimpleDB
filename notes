@@ -62,3 +62,8 @@
 
 7. Use the string.equals(Object other) function to compare strings, not the == operator.
     The function checks the actual contents of the string, the == operator checks whether the references to the objects are equal.
+
+8. UUID: Universally Unique Identifier, represents a 128-bit long value which guarantees uniquencess across time and space
+
+9. ConcurrentHashMap
+    
