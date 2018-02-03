@@ -67,3 +67,22 @@
 
 9. ConcurrentHashMap
     
+10. org.junit Annotation Type Before
+    When writing tests, it is common to find that several tests need similar objects created before they can run. Annotating a public void method with @Before causes that method to be run before the Test method. The @Before methods of superclasses will be run before those of the current class.
+    public class Example {
+       List empty;
+       @Before public void initialize() {
+          empty= new ArrayList();
+       }
+       @Test public void size() {
+          ...
+       }
+       @Test public void remove() {
+          ...
+       }
+    }
+ 
+11. AtomicReference: An object that may be updated atomically
+
+12. SerialVerisonUID
+    The serialization rutime associates with each serializable class a version number, called a serialVersionUID, which is used during deserialization to verify that the sender and the receiver of a serialized object have loaded classes for that object that are compatible with respect to serialization
