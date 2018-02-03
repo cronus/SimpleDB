@@ -43,7 +43,6 @@ public class CatalogTest extends SimpleDbTestBase {
      * Unit test for Catalog.getTableId()
      */
     @Test public void getTableId() {
-        System.out.println("id2:"+id2);
         assertEquals(id2, Database.getCatalog().getTableId(name));
         assertEquals(id1, Database.getCatalog().getTableId(nameThisTestRun));
         

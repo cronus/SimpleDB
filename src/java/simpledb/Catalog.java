@@ -62,6 +62,16 @@ public class Catalog {
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
         int Id = file.getId();
+        // name conflict check
+        // if there is a name conflict, the last table takes the name
+        Iterator<Integer> ids = tables.keySet().iterator();
+        while (ids.hasNext()) {
+            int ConflictId = ids.next();
+            Table tb = tables.get(ConflictId);
+            if (tb.name.equals(name)) {
+                tables.remove(ConflictId); 
+            }
+        }
         tables.put(Id, new Table(file, name, pkeyField));
     }
 
@@ -88,11 +98,9 @@ public class Catalog {
         // some code goes here
         //return 0;
         Iterator<Integer> ids = tables.keySet().iterator();
-        if (ids.hasNext()) {
+        while (ids.hasNext()) {
             int id = ids.next();
             Table tb = tables.get(id);
-            System.out.println(tb.name);
-            System.out.println("real id2:"+tb.file.getId());
             if (tb.name.equals(name))
                 return tb.file.getId();
 
