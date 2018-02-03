@@ -90,8 +90,14 @@ public class Catalog {
         Iterator<Integer> ids = tables.keySet().iterator();
         if (ids.hasNext()) {
             int id = ids.next();
+            Table tb = tables.get(id);
+            System.out.println(tb.name);
+            System.out.println("real id2:"+tb.file.getId());
+            if (tb.name.equals(name))
+                return tb.file.getId();
+
         }
-        return 0;
+        throw new NoSuchElementException();
     }
 
     /**
