@@ -78,9 +78,8 @@ public class RecordId implements Serializable {
     public int hashCode() {
         // some code goes here
         //throw new UnsupportedOperationException("implement this");
-        String result = String.valueOf(tupleno) + String.valueOf(Integer.parseUnsignedInt(pid.hashCode()));
-        System.out.println(result);
-        return Integer.valueOf(result);
+        String result = String.valueOf(pid.hashCode()) + String.valueOf(tupleno);
+        return Integer.parseInt(result);
 
     }
 
