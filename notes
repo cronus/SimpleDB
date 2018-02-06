@@ -86,3 +86,20 @@
 
 12. SerialVerisonUID
     The serialization rutime associates with each serializable class a version number, called a serialVersionUID, which is used during deserialization to verify that the sender and the receiver of a serialized object have loaded classes for that object that are compatible with respect to serialization
+
+13. Type List vs type ArrayList in Java
+    Almost always the first one is preferred over the second one. The first has the advantage that the implementation of the List can change (to a LinkedList for example), without affecting the rest of the code. This will be a difficult task to do with an ArrayList, not only because you will need to change ArrayList to LinkedList everywhere, but also because you may have used ArrayList specific methods.
+
+14. Differnce between C and Java returning an Object reference/pointer
+    The difference here isn't in the way the pointer is returned really. The difference is what you are actually returning. Or rather, what type of object you are trying to return. In the first example, you are returning a local variable. If you were actually allocating some memory dynamically, copying your characters into that block of memory, and then returning that - then you would be like what your Java example does; assuming the Java example is actually correct.
+Code:
+    char *getName( void )
+    {
+        char buf[ BUFSIZ ] = { "some name" };
+        char *s = NULL;
+        s = malloc( strlen( buf ) + 1 );
+        strcpy( s, buf );
+        return s;
+    }
+Something like that. Of course you need to free that when you are done.
+

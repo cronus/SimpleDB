@@ -2,6 +2,7 @@ package simpledb;
 
 import java.io.*;
 import java.util.*;
+import java.nio.file.Files;
 
 /**
  * HeapFile is an implementation of a DbFile that stores a collection of tuples
@@ -15,6 +16,9 @@ import java.util.*;
  */
 public class HeapFile implements DbFile {
 
+
+    private File f;
+    private TupleDesc td;
     /**
      * Constructs a heap file backed by the specified file.
      * 
@@ -24,6 +28,8 @@ public class HeapFile implements DbFile {
      */
     public HeapFile(File f, TupleDesc td) {
         // some code goes here
+        this.f  = f;
+        this.td = td;
     }
 
     /**
@@ -33,7 +39,8 @@ public class HeapFile implements DbFile {
      */
     public File getFile() {
         // some code goes here
-        return null;
+        //return null;
+        return f;
     }
 
     /**
@@ -47,7 +54,8 @@ public class HeapFile implements DbFile {
      */
     public int getId() {
         // some code goes here
-        throw new UnsupportedOperationException("implement this");
+        //throw new UnsupportedOperationException("implement this");
+        return f.getAbsoluteFile().hashCode();
     }
 
     /**
@@ -57,13 +65,18 @@ public class HeapFile implements DbFile {
      */
     public TupleDesc getTupleDesc() {
         // some code goes here
-        throw new UnsupportedOperationException("implement this");
+        //throw new UnsupportedOperationException("implement this");
+        return td;
     }
 
     // see DbFile.java for javadocs
     public Page readPage(PageId pid) {
         // some code goes here
-        return null;
+        //return null;
+        int n           = numPages();
+        HeapPageId hpId = new HeapPageId(pid.getTableId(), pid.getPageNumber());
+        HeapPage pg     = new HeapPage(hpId, Files.readAllBytes(f.toPath()));
+        return pg;
     }
 
     // see DbFile.java for javadocs
@@ -77,7 +90,8 @@ public class HeapFile implements DbFile {
      */
     public int numPages() {
         // some code goes here
-        return 0;
+        //return 0;
+        return (int) Math.ceil(f.length() / BufferPool.getPageSize());
     }
 
     // see DbFile.java for javadocs
