@@ -15,7 +15,7 @@ public class Tuple implements Serializable {
 
     //bocui add variable
     private TupleDesc td;
-    private Field[] f = new Field[100];
+    private Field[] fs = null;
 
     /**
      * Create a new tuple with the specified schema (type).
@@ -28,6 +28,7 @@ public class Tuple implements Serializable {
         // some code goes here
         // assign reference or hard copy? TODO 
         this.td = td;
+        fs = new Field[td.numFields()];
     }
 
     /**
@@ -68,7 +69,7 @@ public class Tuple implements Serializable {
      */
     public void setField(int i, Field f) {
         // some code goes here
-        this.f[i] = f;
+        this.fs[i] = f;
     }
 
     /**
@@ -80,7 +81,7 @@ public class Tuple implements Serializable {
     public Field getField(int i) {
         // some code goes here
         //return null;
-        return this.f[i];
+        return this.fs[i];
     }
 
     /**
@@ -93,8 +94,12 @@ public class Tuple implements Serializable {
      */
     public String toString() {
         // some code goes here
-        throw new UnsupportedOperationException("Implement this");
-        //return 
+        //throw new UnsupportedOperationException("Implement this");
+        String result = "";
+        for (Field f : fs) {
+            result += f.toString() + "\t";
+        }
+        return result;
     }
 
     /**

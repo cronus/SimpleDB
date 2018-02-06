@@ -56,7 +56,7 @@ public class HeapPage implements Page {
             // allocate and read the actual records of this page
             for (int i=0; i<tuples.length; i++) {
                 tuples[i] = readNextTuple(dis,i);
-                //System.out.println(tuples[i]);
+                //System.out.println(i+":"+tuples[i]);
             }
         }catch(NoSuchElementException e){
             e.printStackTrace();
@@ -326,10 +326,12 @@ public class HeapPage implements Page {
     public Iterator<Tuple> iterator() {
         // some code goes here
         //return null;
-        //for (Tuple t : tuples) {
-        //    System.out.println(t);
-        //}
-        return Arrays.asList(tuples).iterator();
+        List<Tuple> NonEmpTuples = new ArrayList<Tuple>();
+        for (int i = 0; i < tuples.length; i++) {
+            if (isSlotUsed(i))
+                NonEmpTuples.add(tuples[i]);
+        }
+        return NonEmpTuples.iterator();
     }
 
 }
