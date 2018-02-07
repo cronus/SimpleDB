@@ -69,7 +69,16 @@ public class BufferPool {
     public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
         // some code goes here
-        return buffers.get(pid);
+        //System.out.println(pid.hashCode());
+        //look up the page in the buffer pool
+        //if exist, return
+        if (pid in buffers.keys())
+            return buffers.get(pid.hashCode());
+        //if not present, add to the buffer pool, new page is added.
+        else
+            buffers.put(pid, );
+            return null;
+            
     }
 
     /**
