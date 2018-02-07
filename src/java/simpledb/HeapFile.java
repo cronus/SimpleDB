@@ -2,7 +2,6 @@ package simpledb;
 
 import java.io.*;
 import java.util.*;
-import java.nio.file.Files;
 
 /**
  * HeapFile is an implementation of a DbFile that stores a collection of tuples
@@ -73,9 +72,23 @@ public class HeapFile implements DbFile {
     public Page readPage(PageId pid) {
         // some code goes here
         //return null;
-        int n           = numPages();
         HeapPageId hpId = new HeapPageId(pid.getTableId(), pid.getPageNumber());
-        HeapPage pg     = new HeapPage(hpId, Files.readAllBytes(f.toPath()));
+        HeapPage pg;
+        // read the data from File f to byte[] buf
+        byte[] buf = new byte[(int) f.length()];
+        int offset = 0;
+        int count  = 0;
+        try {
+            InputStream is   = new FileInputStream(f);
+            while (offset < buf.length
+                   && (count = is.read(buf, offset, buf.length - offset)) >= 0) {
+                offset += count;
+            }
+            is.close();
+            pg     = new HeapPage(hpId, buf);
+        } catch (IOException e) {
+            return null;
+        }
         return pg;
     }
 
@@ -86,7 +99,7 @@ public class HeapFile implements DbFile {
     }
 
     /**
-     * Returns the number of pages in this HeapFile.
+     * Returns the number of pags in this HeapFile.
      */
     public int numPages() {
         // some code goes here
@@ -110,10 +123,20 @@ public class HeapFile implements DbFile {
         // not necessary for lab1
     }
 
+    static class HeapFileIterator extends AbstractDbFileIterator {
+        protected Tuple readNext() throws DbException, TransactionAbortedException {
+            return null;
+        }
+    }
+
     // see DbFile.java for javadocs
     public DbFileIterator iterator(TransactionId tid) {
         // some code goes here
-        return null;
+        //return null;
+        int n = numPages();
+        BufferPool bp = Database.getBufferPool();
+        HeapPage hp = bp.getPage(tid, pid, Permissions.READ_ONLY);
+        List<Tuple> tuples = new ArrayList<Tuple>();
     }
 
 }

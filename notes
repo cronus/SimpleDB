@@ -103,3 +103,29 @@ Code:
     }
 Something like that. Of course you need to free that when you are done.
 
+15. How to return a value from try, catch and finally?
+    To return a value when using try/catch you can use a temporary variable, e.g.
+        double sum = 0.0;
+        try {
+            int length = values.length;
+            double arrayValues[] = new double[length];
+            for(int i = 0; i<length; i++) {
+            arrayValues[i] = Double.parseDouble(values[i]);
+            sum += arrayValues[i];
+        } catch(NumberFormatException e) {
+            e.printStackTrace();
+        } catch(RangeException e) {
+            throw e;
+        } finally {
+            System.out.println("Thank you for using the program!");
+        }
+            return sum;
+        }
+    Else you need to have a return in every execution path (try block or catch block) that has no throw.
+
+16. scope
+    Modifier    Class Package Subclass   World
+    public      Y     Y       Y          Y
+    protected   Y     Y       Y          N
+    no modifier Y     Y       N          N
+    private     Y     N       N          N

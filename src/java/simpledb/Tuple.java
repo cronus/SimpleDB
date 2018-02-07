@@ -16,6 +16,7 @@ public class Tuple implements Serializable {
     //bocui add variable
     private TupleDesc td;
     private Field[] fs = null;
+    private RecordId rid;
 
     /**
      * Create a new tuple with the specified schema (type).
@@ -46,7 +47,8 @@ public class Tuple implements Serializable {
      */
     public RecordId getRecordId() {
         // some code goes here
-        return null;
+        //return null;
+        return rid;
     }
 
     /**
@@ -57,6 +59,7 @@ public class Tuple implements Serializable {
      */
     public void setRecordId(RecordId rid) {
         // some code goes here
+        this.rid = rid;
     }
 
     /**
@@ -109,7 +112,8 @@ public class Tuple implements Serializable {
     public Iterator<Field> fields()
     {
         // some code goes here
-        return null;
+        //return null;
+        return Arrays.asList(fs).iterator();
     }
 
     /**
@@ -118,5 +122,6 @@ public class Tuple implements Serializable {
     public void resetTupleDesc(TupleDesc td)
     {
         // some code goes here
+        td = null;
     }
 }
