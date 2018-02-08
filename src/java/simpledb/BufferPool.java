@@ -72,12 +72,16 @@ public class BufferPool {
         //System.out.println(pid.hashCode());
         //look up the page in the buffer pool
         //if exist, return
-        //if (pid in buffers.keys())
+        if (buffers.containsKey(pid))
             return buffers.get(pid.hashCode());
         ////if not present, add to the buffer pool, new page is added.
-        //else
-        //    buffers.put(pid, );
-        //    return null;
+        else {
+            Catalog ctlg = Database.getCatalog();
+            DbFile f     = ctlg.getDatabaseFile(pid.getTableId());
+            Page p       = f.readPage(pid);
+            buffers.put(pid.hashCode(), p);
+            return p;
+        }
             
     }
 

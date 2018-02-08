@@ -133,8 +133,21 @@ public class HeapFile implements DbFile {
         private int position = 0;
         private List<Tuple> t;
         protected Tuple readNext() throws DbException, TransactionAbortedException {
-            return t.get(position++);
+            if (t == null)
+                return null;
+            else if (position < t.size())
+                return t.get(position);
+            else
+                return null;
         }
+
+        public Tuple next() throws DbException, TransactionAbortedException, 
+                NoSuchElementException {
+            Tuple t = super.next();
+            position++;
+            return t;
+        }
+
         public void rewind() throws DbException, TransactionAbortedException {
             position = 0;
         }
@@ -146,6 +159,7 @@ public class HeapFile implements DbFile {
         // close the iterator
         public void close() {
             t = null;
+            super.close();
         }
     }
 
