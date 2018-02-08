@@ -72,12 +72,12 @@ public class BufferPool {
         //System.out.println(pid.hashCode());
         //look up the page in the buffer pool
         //if exist, return
-        if (pid in buffers.keys())
+        //if (pid in buffers.keys())
             return buffers.get(pid.hashCode());
-        //if not present, add to the buffer pool, new page is added.
-        else
-            buffers.put(pid, );
-            return null;
+        ////if not present, add to the buffer pool, new page is added.
+        //else
+        //    buffers.put(pid, );
+        //    return null;
             
     }
 
