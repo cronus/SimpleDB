@@ -43,6 +43,7 @@ public class HeapPage implements Page {
         this.pid = id;
         this.td = Database.getCatalog().getTupleDesc(id.getTableId());
         this.numSlots = getNumTuples();
+        //System.out.println("heappage:"+this.numSlots);
         //System.out.println(this.numSlots);
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
 

@@ -177,6 +177,7 @@ public class HeapFile implements DbFile {
                 Iterator<Tuple> it = hp.iterator();
                 while(it.hasNext()) {
                     Tuple t = it.next();
+                    //System.out.println("heapfile:"+ t);
                     tuples.add(t);
                 }
             }
