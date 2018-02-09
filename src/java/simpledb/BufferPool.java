@@ -73,7 +73,7 @@ public class BufferPool {
         //look up the page in the buffer pool
         //if exist, return
         //System.out.println("pg hashcode:"+pid.hashCode());
-        if (buffers.containsKey(pid)) {
+        if (buffers.containsKey(pid.hashCode())) {
             //System.out.println("Read from buffer pool.");
             return buffers.get(pid.hashCode());
         }

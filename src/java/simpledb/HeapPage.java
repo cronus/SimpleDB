@@ -49,6 +49,8 @@ public class HeapPage implements Page {
 
         // allocate and read the header slots of this page
         header = new byte[getHeaderSize()];
+        //System.out.println("tuple num:"+this.numSlots);
+        //System.out.println("header size:"+getHeaderSize());
         for (int i=0; i<header.length; i++)
             header[i] = dis.readByte();
         
@@ -85,7 +87,7 @@ public class HeapPage implements Page {
         
         // some code goes here
         //return 0;
-        return (int)Math.ceil(getNumTuples() / 8);
+        return (int)Math.ceil(getNumTuples() / 8d);
                  
     }
     

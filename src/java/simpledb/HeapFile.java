@@ -86,21 +86,21 @@ public class HeapFile implements DbFile {
         int offset = pid.getPageNumber() * Database.getBufferPool().getPageSize();
         int count  = 0;
         try {
-            InputStream is   = new FileInputStream(f);
+            InputStream is  = new FileInputStream(f);
+            is.skip(offset);
             while (offset < buf.length
-                   && (count = is.read(buf, offset, buf.length - offset)) >= 0) {
+                   && (count = is.read(buf, 0, buf.length - offset)) >= 0) {
                 offset += count;
             }
             is.close();
-            System.out.println("offset, count "+offset+":"+count);
             pg     = new HeapPage(hpId, buf);
-            if (count <= 4096) {
-                System.out.println("not first page of file");
-                Iterator<Tuple> it = pg.iterator();
-                while(it.hasNext()) {
-                    System.out.println("ddd:"+it.next());
-                }
-            }
+            //if (count <= 4096) {
+            //    System.out.println("not first page of file");
+            //    Iterator<Tuple> it = pg.iterator();
+            //    while(it.hasNext()) {
+            //        System.out.println("ddd:"+it.next());
+            //    }
+            //}
         } catch (IOException e) {
             return null;
         }
@@ -180,6 +180,7 @@ public class HeapFile implements DbFile {
         //System.out.println(n);
         int tableid = getId();
         BufferPool bp = Database.getBufferPool();
+        tuples.clear();
         try {
             for (int i = 0; i < n; i++) {
                 HeapPageId hpId = new HeapPageId(tableid, i);
