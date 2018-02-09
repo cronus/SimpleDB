@@ -132,3 +132,6 @@ Something like that. Of course you need to free that when you are done.
 
 17. Java rounding up to an int using Math.ceil? int total = (int) Math.ceil(157/32); Why does it still return 4? 157/32 = 4.90625, I need to round up, I've looked around and this seems to be the right method.
     You are doing 157/32 which is dividing two integers with each other, which always result in a rounded down integer. Therefore the (int) Math.ceil(...) isn't doing anything.
+
+18. enum
+    An enum type is a special data type that enables for a variable to be a set of predefined constants.
