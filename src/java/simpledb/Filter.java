@@ -9,6 +9,9 @@ public class Filter extends Operator {
 
     private static final long serialVersionUID = 1L;
 
+    private Predicate p;
+    private OpIterator[] children;
+
     /**
      * Constructor accepts a predicate to apply and a child operator to read
      * tuples to filter from.
@@ -20,29 +23,36 @@ public class Filter extends Operator {
      */
     public Filter(Predicate p, OpIterator child) {
         // some code goes here
+        this.p           = p;
+        this.children    = new OpIterator[1];
+        this.children[0] = child;
     }
 
     public Predicate getPredicate() {
         // some code goes here
-        return null;
+        return p;
     }
 
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+        //return null;
+        return children[0].getTupleDesc();
     }
 
     public void open() throws DbException, NoSuchElementException,
             TransactionAbortedException {
         // some code goes here
+        children[0].open();
     }
 
     public void close() {
         // some code goes here
+        children[0].close();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
+        children[0].rewind();
     }
 
     /**
@@ -57,18 +67,25 @@ public class Filter extends Operator {
     protected Tuple fetchNext() throws NoSuchElementException,
             TransactionAbortedException, DbException {
         // some code goes here
-        return null;
+        //return null;
+        while (children[0].hasNext()) {
+            Tuple t = children[0].next();
+            if (p.filter(t))
+                return t;
+        }
+        throw new NoSuchElementException();
     }
 
     @Override
     public OpIterator[] getChildren() {
         // some code goes here
-        return null;
+        return children;
     }
 
     @Override
     public void setChildren(OpIterator[] children) {
         // some code goes here
+        this.children = children;
     }
 
 }
