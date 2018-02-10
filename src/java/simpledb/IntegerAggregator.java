@@ -7,6 +7,13 @@ public class IntegerAggregator implements Aggregator {
 
     private static final long serialVersionUID = 1L;
 
+    private int gbfield;
+    private Type gbfieldtype;
+    private int afield;
+    private Op what;
+
+    private List<Tuple> aggregateTuples;
+
     /**
      * Aggregate constructor
      * 
@@ -24,6 +31,11 @@ public class IntegerAggregator implements Aggregator {
 
     public IntegerAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
         // some code goes here
+        this.gbfield         = gbfield;
+        this.gbfieldtype     = gbfieldtype;
+        this.afield          = afield;
+        this.what            = what;
+        this.aggregateTuples = new ArrayList<Tuple>():
     }
 
     /**
@@ -35,6 +47,19 @@ public class IntegerAggregator implements Aggregator {
      */
     public void mergeTupleIntoGroup(Tuple tup) {
         // some code goes here
+        TupleDesc td = tup.getTupleDesc();
+        Type[]   t = new Type[2] {td.getFieldType(gbfield), td.getFiledType(afield)};
+        String[] s = new String[2] {td.getFieldName(gbfield), td.getFieldName(afield)};
+        TupleDesc atd = new TupleDesc(t, s);
+        Field gf = tup.getField(gbfield);
+        Field af = tup.getField(afield);
+        // if the aggregator tuples contains the tuple
+        // merge
+        if (aggregateTuples.contains(gf)) {
+        }
+        else {
+            aggregatorTuples.add();
+        }
     }
 
     /**
@@ -47,8 +72,9 @@ public class IntegerAggregator implements Aggregator {
      */
     public OpIterator iterator() {
         // some code goes here
-        throw new
-        UnsupportedOperationException("please implement me for lab2");
+        //throw new
+        //UnsupportedOperationException("please implement me for lab2");
+        return new TupleIteragor(aggregateTuples.getTupleDesc(), agregateTuples.iterator());
     }
 
 }
