@@ -12,6 +12,9 @@ public class Filter extends Operator {
     private Predicate p;
     private OpIterator[] children;
 
+    private int position;
+    private List<Tuple> tuples;
+
     /**
      * Constructor accepts a predicate to apply and a child operator to read
      * tuples to filter from.
@@ -43,16 +46,27 @@ public class Filter extends Operator {
             TransactionAbortedException {
         // some code goes here
         children[0].open();
+        super.open();
+        position = 0;
+        tuples = new ArrayList<Tuple>();
+        while (children[0].hasNext()) {
+            Tuple t = children[0].next();
+            if (p.filter(t))
+                tuples.add(t);
+        }
     }
 
     public void close() {
         // some code goes here
         children[0].close();
+        super.close();
+        tuples = null;
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
         children[0].rewind();
+        position = 0;
     }
 
     /**
@@ -68,12 +82,11 @@ public class Filter extends Operator {
             TransactionAbortedException, DbException {
         // some code goes here
         //return null;
-        while (children[0].hasNext()) {
-            Tuple t = children[0].next();
-            if (p.filter(t))
-                return t;
+        if (position < tuples.size()) {
+            return tuples.get(position++);
         }
-        throw new NoSuchElementException();
+        else
+            return null;
     }
 
     @Override
