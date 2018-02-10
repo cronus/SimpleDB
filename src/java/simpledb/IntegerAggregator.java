@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.util.*;
 /**
  * Knows how to compute some aggregate over a set of IntFields.
  */
@@ -11,6 +12,11 @@ public class IntegerAggregator implements Aggregator {
     private Type gbfieldtype;
     private int afield;
     private Op what;
+
+    private int count;
+    private int sum;
+    private int min;
+    private int max;
 
     private List<Tuple> aggregateTuples;
 
@@ -35,7 +41,7 @@ public class IntegerAggregator implements Aggregator {
         this.gbfieldtype     = gbfieldtype;
         this.afield          = afield;
         this.what            = what;
-        this.aggregateTuples = new ArrayList<Tuple>():
+        this.aggregateTuples = new ArrayList<Tuple>();
     }
 
     /**
@@ -48,17 +54,85 @@ public class IntegerAggregator implements Aggregator {
     public void mergeTupleIntoGroup(Tuple tup) {
         // some code goes here
         TupleDesc td = tup.getTupleDesc();
-        Type[]   t = new Type[2] {td.getFieldType(gbfield), td.getFiledType(afield)};
-        String[] s = new String[2] {td.getFieldName(gbfield), td.getFieldName(afield)};
-        TupleDesc atd = new TupleDesc(t, s);
-        Field gf = tup.getField(gbfield);
-        Field af = tup.getField(afield);
-        // if the aggregator tuples contains the tuple
-        // merge
-        if (aggregateTuples.contains(gf)) {
-        }
+        // No_GROUPING
+        if (gbfield == -1) {
+            Type[] type    = {td.getFieldType(afield)};
+            String[] str   = {td.getFieldName(afield)};
+            TupleDesc atd  = new TupleDesc(type, str);
+            Tuple newngt   = new Tuple(atd);
+            Field af       = tup.getField(afield);
+            newngt.setField(0, af);
+            aggregateTuples.add(newngt);
+        } 
         else {
-            aggregatorTuples.add();
+            Type[]   type = {td.getFieldType(gbfield), td.getFieldType(afield)};
+            String[] str  = {td.getFieldName(gbfield), td.getFieldName(afield)};
+            TupleDesc atd = new TupleDesc(type, str);
+            Field gf      = tup.getField(gbfield);
+            Field af      = tup.getField(afield);
+            // if the aggregator tuples contains the group value
+            // merge
+            boolean nogv = true;
+            Iterator<Tuple> it = aggregateTuples.iterator();
+            while(it.hasNext()) {
+                Tuple t = it.next();
+                if (t.getField(0).hashCode() == gf.hashCode()) {
+                    nogv = false;
+                    sum += af.hashCode();
+                    count++;
+                    if (min > af.hashCode())
+                        min = af.hashCode();
+                    if (max < af.hashCode())
+                        max = af.hashCode();
+                    if (what == Aggregator.Op.MIN) {
+                        t.setField(1, new IntField(min));
+                    }
+                    else if (what == Aggregator.Op.MAX) {
+                        t.setField(1, new IntField(max));
+                    }
+                    else if (what == Aggregator.Op.SUM) {
+                        t.setField(1, new IntField(sum));
+                    }
+                    else if (what == Aggregator.Op.AVG) {
+                        t.setField(1, new IntField(sum/count));
+                    }
+                    else if (what == Aggregator.Op.COUNT) {
+                        t.setField(1, new IntField(count));
+                    }
+                    else {
+                        System.out.println("Unsupported operator!");
+                    }
+                    break;
+                }
+            }
+            // not find the same group value
+            if (nogv) {
+                Tuple newt = new Tuple(atd);
+                newt.setField(0, new IntField(gf.hashCode()));
+                count = 1;
+                sum   = af.hashCode();
+                min   = af.hashCode();
+                max   = af.hashCode();
+                if (what == Aggregator.Op.MIN) {
+                    newt.setField(1, new IntField(min));
+                }
+                else if (what == Aggregator.Op.MAX) {
+                    newt.setField(1, new IntField(max));
+                }
+                else if (what == Aggregator.Op.SUM) {
+                    newt.setField(1, new IntField(sum));
+                }
+                else if (what == Aggregator.Op.AVG) {
+                    newt.setField(1, new IntField(sum/count));
+                }
+                else if (what == Aggregator.Op.COUNT) {
+                    newt.setField(1, new IntField(count));
+                }
+                else {
+                    System.out.println("Unsupported operator!");
+                }
+                aggregateTuples.add(newt);
+            }
         }
     }
 
@@ -74,7 +148,7 @@ public class IntegerAggregator implements Aggregator {
         // some code goes here
         //throw new
         //UnsupportedOperationException("please implement me for lab2");
-        return new TupleIteragor(aggregateTuples.getTupleDesc(), agregateTuples.iterator());
+        return new TupleIterator(aggregateTuples.get(0).getTupleDesc(), aggregateTuples);
     }
 
 }
