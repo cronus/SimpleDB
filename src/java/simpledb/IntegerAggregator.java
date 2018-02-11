@@ -53,6 +53,7 @@ public class IntegerAggregator implements Aggregator {
      */
     public void mergeTupleIntoGroup(Tuple tup) {
         // some code goes here
+        //System.out.println(tup);
         TupleDesc td = tup.getTupleDesc();
         // No_GROUPING
         if (gbfield == -1) {
@@ -76,7 +77,7 @@ public class IntegerAggregator implements Aggregator {
             Iterator<Tuple> it = aggregateTuples.iterator();
             while(it.hasNext()) {
                 Tuple t = it.next();
-                if (t.getField(0).hashCode() == gf.hashCode()) {
+                if (t.getField(0).equals(gf)) {
                     nogv = false;
                     sum += af.hashCode();
                     count++;
@@ -101,6 +102,7 @@ public class IntegerAggregator implements Aggregator {
                     }
                     else {
                         System.out.println("Unsupported operator!");
+                        throw new IllegalArgumentException();
                     }
                     break;
                 }
@@ -130,8 +132,10 @@ public class IntegerAggregator implements Aggregator {
                 }
                 else {
                     System.out.println("Unsupported operator!");
+                    throw new IllegalArgumentException();
                 }
                 aggregateTuples.add(newt);
+                //System.out.println(newt);
             }
         }
     }
@@ -148,6 +152,7 @@ public class IntegerAggregator implements Aggregator {
         // some code goes here
         //throw new
         //UnsupportedOperationException("please implement me for lab2");
+        //System.out.println("int aggre size:"+aggregateTuples.size());
         return new TupleIterator(aggregateTuples.get(0).getTupleDesc(), aggregateTuples);
     }
 
