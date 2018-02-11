@@ -13,12 +13,14 @@ public class IntegerAggregator implements Aggregator {
     private int afield;
     private Op what;
 
-    private int count;
-    private int sum;
-    private int min;
-    private int max;
-
-    private List<Tuple> aggregateTuples;
+    private List<Tuple> aggregateTuples    = null;
+    /*    0: MIN
+     *    1: MAX
+     *    2: SUM
+     *    3: COUNT
+     */
+    private Map<Field, int[]> aggregateMap = null;
+    private int[] ngAggreValues;
 
     /**
      * Aggregate constructor
@@ -42,6 +44,12 @@ public class IntegerAggregator implements Aggregator {
         this.afield          = afield;
         this.what            = what;
         this.aggregateTuples = new ArrayList<Tuple>();
+        this.aggregateMap    = new HashMap<Field, int[]>();
+        this.ngAggreValues   = new int[4];
+        this.ngAggreValues[0]   = Integer.MAX_VALUE;
+        this.ngAggreValues[1]   = Integer.MIN_VALUE;
+        this.ngAggreValues[2]   = 0;
+        this.ngAggreValues[3]   = 0;
     }
 
     /**
@@ -54,19 +62,49 @@ public class IntegerAggregator implements Aggregator {
     public void mergeTupleIntoGroup(Tuple tup) {
         // some code goes here
         //System.out.println(tup);
+        //System.out.println("gbfield:"+gbfield);
+        //System.out.println("afield:"+afield);
         TupleDesc td = tup.getTupleDesc();
         // No_GROUPING
-        if (gbfield == -1) {
-            Type[] type    = {td.getFieldType(afield)};
-            String[] str   = {td.getFieldName(afield)};
-            TupleDesc atd  = new TupleDesc(type, str);
-            Tuple newngt   = new Tuple(atd);
+        if (gbfield == Aggregator.NO_GROUPING) {
+            if (aggregateTuples.size() == 0) {
+                Type[] type    = {Type.INT_TYPE};
+                String[] str   = {td.getFieldName(afield)};
+                TupleDesc atd  = new TupleDesc(type, str);
+                Tuple newngt   = new Tuple(atd);
+                aggregateTuples.add(newngt);
+            }
+
             Field af       = tup.getField(afield);
-            newngt.setField(0, af);
-            aggregateTuples.add(newngt);
+            ngAggreValues[2] += af.hashCode();
+            ngAggreValues[3]++;
+            if (ngAggreValues[0] > af.hashCode())
+                ngAggreValues[0] = af.hashCode();
+            if (ngAggreValues[1] < af.hashCode())
+                ngAggreValues[1] = af.hashCode();
+
+            if (what == Aggregator.Op.MIN) {
+                aggregateTuples.get(0).setField(0, new IntField(ngAggreValues[0]));
+            }
+            else if (what == Aggregator.Op.MAX) {
+                aggregateTuples.get(0).setField(0, new IntField(ngAggreValues[1]));
+            }
+            else if (what == Aggregator.Op.SUM) {
+                aggregateTuples.get(0).setField(0, new IntField(ngAggreValues[2]));
+            }
+            else if (what == Aggregator.Op.AVG) {
+                aggregateTuples.get(0).setField(0, new IntField(ngAggreValues[2]/ngAggreValues[3]));
+            }
+            else if (what == Aggregator.Op.COUNT) {
+                aggregateTuples.get(0).setField(0, new IntField(ngAggreValues[3]));
+            }
+            else {
+                System.out.println("Unsupported operator!");
+                throw new IllegalArgumentException();
+            }
         } 
         else {
-            Type[]   type = {td.getFieldType(gbfield), td.getFieldType(afield)};
+            Type[]   type = {td.getFieldType(gbfield), Type.INT_TYPE};
             String[] str  = {td.getFieldName(gbfield), td.getFieldName(afield)};
             TupleDesc atd = new TupleDesc(type, str);
             Field gf      = tup.getField(gbfield);
@@ -78,27 +116,28 @@ public class IntegerAggregator implements Aggregator {
             while(it.hasNext()) {
                 Tuple t = it.next();
                 if (t.getField(0).equals(gf)) {
+                    //System.out.println("min2:"+min);
                     nogv = false;
-                    sum += af.hashCode();
-                    count++;
-                    if (min > af.hashCode())
-                        min = af.hashCode();
-                    if (max < af.hashCode())
-                        max = af.hashCode();
+                    aggregateMap.get(gf)[2] += af.hashCode();
+                    aggregateMap.get(gf)[3]++;
+                    if (aggregateMap.get(gf)[0] > af.hashCode())
+                        aggregateMap.get(gf)[0] = af.hashCode();
+                    if (aggregateMap.get(gf)[1] < af.hashCode())
+                        aggregateMap.get(gf)[1] = af.hashCode();
                     if (what == Aggregator.Op.MIN) {
-                        t.setField(1, new IntField(min));
+                        t.setField(1, new IntField(aggregateMap.get(gf)[0]));
                     }
                     else if (what == Aggregator.Op.MAX) {
-                        t.setField(1, new IntField(max));
+                        t.setField(1, new IntField(aggregateMap.get(gf)[1]));
                     }
                     else if (what == Aggregator.Op.SUM) {
-                        t.setField(1, new IntField(sum));
+                        t.setField(1, new IntField(aggregateMap.get(gf)[2]));
                     }
                     else if (what == Aggregator.Op.AVG) {
-                        t.setField(1, new IntField(sum/count));
+                        t.setField(1, new IntField(aggregateMap.get(gf)[2]/aggregateMap.get(gf)[3]));
                     }
                     else if (what == Aggregator.Op.COUNT) {
-                        t.setField(1, new IntField(count));
+                        t.setField(1, new IntField(aggregateMap.get(gf)[3]));
                     }
                     else {
                         System.out.println("Unsupported operator!");
@@ -111,10 +150,12 @@ public class IntegerAggregator implements Aggregator {
             if (nogv) {
                 Tuple newt = new Tuple(atd);
                 newt.setField(0, gf);
-                count = 1;
-                sum   = af.hashCode();
-                min   = af.hashCode();
-                max   = af.hashCode();
+                int min   = af.hashCode();
+                int max   = af.hashCode();
+                int sum   = af.hashCode();
+                int count = 1;
+                int[] aggreValues = {min, max, sum, count};
+                //System.out.println("min:"+min);
                 if (what == Aggregator.Op.MIN) {
                     newt.setField(1, new IntField(min));
                 }
@@ -135,6 +176,7 @@ public class IntegerAggregator implements Aggregator {
                     throw new IllegalArgumentException();
                 }
                 aggregateTuples.add(newt);
+                aggregateMap.put(gf, aggreValues);
                 //System.out.println(newt);
             }
         }

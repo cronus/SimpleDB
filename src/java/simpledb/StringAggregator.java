@@ -13,8 +13,9 @@ public class StringAggregator implements Aggregator {
     private int afield;
     private Op what;
 
-    private int count;
+    private int ngcount;
     private List<Tuple> aggregateTuples;
+    private Map<Field, Integer> aggregateMap = null;
     /**
      * Aggregate constructor
      * @param gbfield the 0-based index of the group-by field in the tuple, or NO_GROUPING if there is no grouping
@@ -26,11 +27,13 @@ public class StringAggregator implements Aggregator {
 
     public StringAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
         // some code goes here
-        this.gbfield     = gbfield;
-        this.gbfieldtype = gbfieldtype;
-        this.afield      = afield;
-        this.what        = what;
+        this.gbfield         = gbfield;
+        this.gbfieldtype     = gbfieldtype;
+        this.afield          = afield;
+        this.what            = what;
         this.aggregateTuples = new ArrayList<Tuple>();
+        this.aggregateMap    = new HashMap<Field, Integer>();
+        this.ngcount         = 0;
     }
 
     /**
@@ -40,14 +43,23 @@ public class StringAggregator implements Aggregator {
     public void mergeTupleIntoGroup(Tuple tup) {
         // some code goes here
         TupleDesc td = tup.getTupleDesc();
-        if (gbfield == -1) {
-            Type[] type    = {td.getFieldType(afield)};
-            String[] str   = {td.getFieldName(afield)};
-            TupleDesc atd  = new TupleDesc(type, str);
-            Tuple newngt   = new Tuple(atd);
-            Field af       = tup.getField(afield);
-            newngt.setField(0, af);
-            aggregateTuples.add(newngt);
+        if (gbfield == Aggregator.NO_GROUPING) {
+            if (aggregateTuples.size() == 0) {
+                Type[] type    = {td.getFieldType(afield)};
+                String[] str   = {td.getFieldName(afield)};
+                TupleDesc atd  = new TupleDesc(type, str);
+                Tuple newngt   = new Tuple(atd);
+                aggregateTuples.add(newngt);
+                ngcount++;
+            }
+            ngcount++;
+            if (what == Aggregator.Op.COUNT) {
+                aggregateTuples.get(0).setField(0, new IntField(ngcount));
+            }
+            else {
+                System.out.println("Unsupported operator!");
+                throw new IllegalArgumentException();
+            }
         } 
         else {
             Type[]   type = {td.getFieldType(gbfield), Type.INT_TYPE};
@@ -59,9 +71,10 @@ public class StringAggregator implements Aggregator {
             Iterator<Tuple> it = aggregateTuples.iterator();
             while(it.hasNext()) {
                 Tuple t = it.next();
-                if (t.getField(0).hashCode() == gf.hashCode()) {
+                if (t.getField(0).equals(gf)) {
                     nogv = false;
-                    count++;
+                    int count = aggregateMap.get(gf);
+                    aggregateMap.put(gf, ++count);
                     if (what == Aggregator.Op.COUNT) {
                         t.setField(1, new IntField(count));
                     }
@@ -76,9 +89,8 @@ public class StringAggregator implements Aggregator {
             if (nogv) {
                 Tuple newt = new Tuple(atd);
                 newt.setField(0, gf);
-                count = 1;
                 if (what == Aggregator.Op.COUNT) {
-                    newt.setField(1, new IntField(count));
+                    newt.setField(1, new IntField(1));
                 }
                 else {
                     System.out.println("Unsupported operator!");
@@ -86,6 +98,7 @@ public class StringAggregator implements Aggregator {
                 }
                 //System.out.println(newt);
                 aggregateTuples.add(newt);
+                aggregateMap.put(gf, 1);
             }
         }
     }

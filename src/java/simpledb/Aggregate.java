@@ -55,7 +55,7 @@ public class Aggregate extends Operator {
     public int groupField() {
 	// some code goes here
 	//return -1;
-        if (gfield != -1)
+        if (gfield != Aggregator.NO_GROUPING)
             return gfield;
         else
             return Aggregator.NO_GROUPING;
@@ -112,12 +112,22 @@ public class Aggregate extends Operator {
         position = 0;
         tuples       = new ArrayList<Tuple>();
         TupleDesc td = children[0].getTupleDesc();
-        Type gt      = td.getFieldType(gfield);
-        if (td.getFieldType(afield) == Type.INT_TYPE) {
-            aggre = new IntegerAggregator(gfield, gt, afield, aop);
+        if (gfield != Aggregator.NO_GROUPING) {
+            Type gt      = td.getFieldType(gfield);
+            if (td.getFieldType(afield) == Type.INT_TYPE) {
+                aggre = new IntegerAggregator(gfield, gt, afield, aop);
+            }
+            else if (td.getFieldType(afield) == Type.STRING_TYPE) {
+                aggre = new StringAggregator(gfield, gt, afield, aop);
+            }
         }
-        else if (td.getFieldType(afield) == Type.STRING_TYPE) {
-            aggre = new StringAggregator(gfield, gt, afield, aop);
+        else {
+            if (td.getFieldType(afield) == Type.INT_TYPE) {
+                aggre = new IntegerAggregator(gfield, null, afield, aop);
+            }
+            else if (td.getFieldType(afield) == Type.STRING_TYPE) {
+                aggre = new StringAggregator(gfield, null, afield, aop);
+            }
         }
         while (children[0].hasNext()) {
             Tuple t = children[0].next();
