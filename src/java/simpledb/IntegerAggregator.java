@@ -108,7 +108,7 @@ public class IntegerAggregator implements Aggregator {
             // not find the same group value
             if (nogv) {
                 Tuple newt = new Tuple(atd);
-                newt.setField(0, new IntField(gf.hashCode()));
+                newt.setField(0, gf);
                 count = 1;
                 sum   = af.hashCode();
                 min   = af.hashCode();
