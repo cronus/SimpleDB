@@ -11,6 +11,11 @@ public class Aggregate extends Operator {
 
     private static final long serialVersionUID = 1L;
 
+    private OpIterator[] children;
+    private int afield;
+    private int gfield;
+    private Aggregator.Op aop;
+
     /**
      * Constructor.
      * 
@@ -31,6 +36,11 @@ public class Aggregate extends Operator {
      */
     public Aggregate(OpIterator child, int afield, int gfield, Aggregator.Op aop) {
 	// some code goes here
+        this.children =new Operator[1];
+        this.children[0]   = child;
+        this.afield        = afield;
+        this.gfield        = gfield;
+        this.aop           = aop;
     }
 
     /**
@@ -40,7 +50,11 @@ public class Aggregate extends Operator {
      * */
     public int groupField() {
 	// some code goes here
-	return -1;
+	//return -1;
+        if (gfield != -1)
+            return gfield;
+        else
+            return Aggregator.NO_GROUPING;
     }
 
     /**
@@ -58,7 +72,8 @@ public class Aggregate extends Operator {
      * */
     public int aggregateField() {
 	// some code goes here
-	return -1;
+	//return -1;
+        return afield;
     }
 
     /**
@@ -75,16 +90,18 @@ public class Aggregate extends Operator {
      * */
     public Aggregator.Op aggregateOp() {
 	// some code goes here
-	return null;
+	//return null;
+        return aop;
     }
 
     public static String nameOfAggregatorOp(Aggregator.Op aop) {
-	return aop.toString();
+	    return aop.toString();
     }
 
     public void open() throws NoSuchElementException, DbException,
 	    TransactionAbortedException {
 	// some code goes here
+        
     }
 
     /**
