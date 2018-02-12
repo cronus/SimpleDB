@@ -209,6 +209,10 @@ public class BufferPool {
     private synchronized  void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
+        Catalog ctlg = Database.getCatalog();
+        DbFile f     = ctlg.getDatabaseFile(pid.getTableId());
+        Page p       =  buffers.get(pid.hashCode());
+        f.writePage(p);
     }
 
     /** Write all pages of the specified transaction to disk.

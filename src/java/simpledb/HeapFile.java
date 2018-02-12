@@ -114,6 +114,12 @@ public class HeapFile implements DbFile {
     public void writePage(Page page) throws IOException {
         // some code goes here
         // not necessary for lab1
+        FileOutputStream os = new FileOutputStream(f);
+        byte[] b = new byte[(numPages() + 1) * BufferPool.getPageSize()];
+        Arrays.fill (b, (byte) 0);
+        os.write(b, numPages() * BufferPool.getPageSize(), BufferPool.getPageSize());
+        os.close();
+        System.out.println(numPages());
     }
 
     /**
@@ -131,20 +137,28 @@ public class HeapFile implements DbFile {
         // some code goes here
         //return null;
         // not necessary for lab1
-        pages.clear();
-        HeapPageId hpId = (HeapPageId) t.getRecordId().getPageId();
-        HeapPage hp     = (HeapPage) bp.getPage(tid, hpId, Permissions.READ_WRITE);
-        if (hp.getNumEmptySlots() != 0) {
-            hp.insertTuple(t);
-        }
-        //else {
-        //    HeapPage npg = new HeapPage(pid, HeapPage.createEmptyPageData());
-        //    t.setRecordId(pid, tupleno);
-        //    npg.insertTuple(t);
-        //}
+        int n              = numPages();
+        int tableid        = getId();
+        boolean insertDone = false;
 
-        int n       = numPages();
-        int tableid = getId();
+        pages.clear();
+        for (int i = 0; i < n; i++) {
+            HeapPageId hpId = new HeapPageId(tableid, i);
+            HeapPage hp     = (HeapPage) bp.getPage(tid, hpId, Permissions.READ_WRITE);
+            if (hp.getNumEmptySlots() != 0) {
+                hp.insertTuple(t);
+                insertDone = true;
+                break;
+            }
+        }
+
+        //if all pages are full, append a new page
+        if (!insertDone) {
+            HeapPageId nhpId = new HeapPageId(tableid, n);
+            HeapPage nhp     = new HeapPage(nhpId, HeapPage.createEmptyPageData());
+            writePage(nhp);
+        }
+
         for (int i = 0; i < n; i++) {
             HeapPageId hpId2 = new HeapPageId(tableid, i);
             HeapPage hp2 = (HeapPage) bp.getPage(tid, hpId2, Permissions.READ_WRITE);
