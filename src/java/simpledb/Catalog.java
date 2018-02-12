@@ -129,6 +129,7 @@ public class Catalog {
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
         // some code goes here
         //return null;
+        System.out.println(tables.get(tableid));
         return tables.get(tableid).file;
     }
 
