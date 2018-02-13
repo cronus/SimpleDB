@@ -114,12 +114,10 @@ public class HeapFile implements DbFile {
     public void writePage(Page page) throws IOException {
         // some code goes here
         // not necessary for lab1
-        FileOutputStream os = new FileOutputStream(f);
-        byte[] b = new byte[(numPages() + 1) * BufferPool.getPageSize()];
-        Arrays.fill (b, (byte) 0);
-        os.write(b, numPages() * BufferPool.getPageSize(), BufferPool.getPageSize());
+        FileOutputStream os = new FileOutputStream(f, true);
+        byte[] pageData = page.getPageData();
+        os.write(pageData);
         os.close();
-        System.out.println(numPages());
     }
 
     /**
@@ -157,6 +155,8 @@ public class HeapFile implements DbFile {
             HeapPageId nhpId = new HeapPageId(tableid, n);
             HeapPage nhp     = new HeapPage(nhpId, HeapPage.createEmptyPageData());
             writePage(nhp);
+            nhp              = (HeapPage) bp.getPage(tid, nhpId, Permissions.READ_WRITE);
+            nhp.insertTuple(t);
         }
 
         for (int i = 0; i < n; i++) {
