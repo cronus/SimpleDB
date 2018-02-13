@@ -20,7 +20,6 @@ public class HeapFile implements DbFile {
     private TupleDesc td;
     private List<Tuple> tuples;
     private ArrayList<Page> pages;
-    private BufferPool bp = Database.getBufferPool();
     /**
      * Constructs a heap file backed by the specified file.
      * 
@@ -137,6 +136,7 @@ public class HeapFile implements DbFile {
         // not necessary for lab1
         int n              = numPages();
         int tableid        = getId();
+        BufferPool bp      = Database.getBufferPool();
         boolean insertDone = false;
 
         pages.clear();
@@ -175,8 +175,12 @@ public class HeapFile implements DbFile {
         // not necessary for lab1
         pages.clear();
         HeapPageId hpId = (HeapPageId) t.getRecordId().getPageId();
+        BufferPool bp = Database.getBufferPool();
         HeapPage hp = (HeapPage) bp.getPage(tid, hpId, Permissions.READ_WRITE);
         hp.deleteTuple(t);
+        //System.out.println(t.getRecordId().getPageId().hashCode());
+        //System.out.println("d:"+hp.getNumEmptySlots());
+        //System.out.println("heapfile:"+bp);
 
         int n       = numPages();
         int tableid = getId();
@@ -229,6 +233,7 @@ public class HeapFile implements DbFile {
         int n       = numPages();
         //System.out.println(n);
         int tableid = getId();
+        BufferPool bp = Database.getBufferPool();
         tuples.clear();
         try {
             for (int i = 0; i < n; i++) {

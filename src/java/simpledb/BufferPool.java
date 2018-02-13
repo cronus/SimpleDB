@@ -1,6 +1,7 @@
 package simpledb;
 
 import java.io.*;
+import java.util.*;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -74,7 +75,7 @@ public class BufferPool {
         //if exist, return
         //System.out.println("pg hashcode:"+pid.hashCode());
         if (buffers.containsKey(pid.hashCode())) {
-            //System.out.println("Read from buffer pool.");
+            //System.out.println("Read from buffer pool."+pid.hashCode());
             return buffers.get(pid.hashCode());
         }
         ////if not present, add to the buffer pool, new page is added.
@@ -157,6 +158,9 @@ public class BufferPool {
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for lab1
+        Catalog ctlg = Database.getCatalog();
+        HeapFile hf  = (HeapFile) ctlg.getDatabaseFile(tableId);
+        hf.insertTuple(tid, t);
     }
 
     /**
@@ -176,6 +180,12 @@ public class BufferPool {
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for lab1
+        int tableId  = t.getRecordId().getPageId().getTableId();
+        Catalog ctlg = Database.getCatalog();
+        HeapFile hf  = (HeapFile) ctlg.getDatabaseFile(tableId);
+        hf.deleteTuple(tid, t);
+
+        //System.out.println("bufferpool.java:"+this);
     }
 
     /**
