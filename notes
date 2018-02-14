@@ -144,7 +144,23 @@ Something like that. Of course you need to free that when you are done.
 
 19 synchronized method
 
-20 How to write data with FileOutputStream without losing old data?
+20. How to write data with FileOutputStream without losing old data?
     Use the constructor that takes a File and a boolean
         FileOutputStream(File file, boolean append) 
     and set the boolean to true. That way, the data you write will be appended to the end of the file, rather than overwriting what was already there.
+
+21. Class Object (What does classname.class return?)
+    It returns the same what Object.getClass() does for a given instance, but you can use it when you know statically what class you want (i.e. at compile time).
+
+    From the Javadoc:
+        Returns the runtime class of this Object.
+        In short, it gives you an object that represents the class of the (original) object. It's used, amongst other things, by reflection when you want to programatically discover methods and fields in order to invoke/access them.
+
+        For example:
+            Method m[] = String.class.getDeclaredMethods();
+            for (int i = 0; i < m.length; i++)
+            {
+              System.out.println(m[i].toString());
+            }
+
+22. 

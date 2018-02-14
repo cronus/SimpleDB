@@ -74,16 +74,22 @@ public class BufferPool {
         //look up the page in the buffer pool
         //if exist, return
         //System.out.println("pg hashcode:"+pid.hashCode());
+        System.out.println("buffer size:"+buffers.size());
         if (buffers.containsKey(pid.hashCode())) {
             //System.out.println("Read from buffer pool."+pid.hashCode());
             return buffers.get(pid.hashCode());
         }
-        ////if not present, add to the buffer pool, new page is added.
+        //if not present, add to the buffer pool, new page is added.
         else {
             Catalog ctlg = Database.getCatalog();
             DbFile f     = ctlg.getDatabaseFile(pid.getTableId());
-            Page p = f.readPage(pid);
+            Page p       = f.readPage(pid);
             if (p != null) {
+                //System.out.println("[debug]Fetch page from disk");
+                if (buffers.size() == 16) {
+                    evictPage();
+                }
+
                 buffers.put(pid.hashCode(), p);
                 return p;
             }
@@ -204,6 +210,12 @@ public class BufferPool {
     public synchronized void flushAllPages() throws IOException {
         // some code goes here
         // not necessary for lab1
+        Iterator<Integer> keys = buffers.keySet().iterator();
+        while (keys.hasNext()) {
+           int key = keys.next();
+           Page p  = buffers.get(key);
+           flushPage(p.getId());
+        }
 
     }
 
@@ -218,6 +230,7 @@ public class BufferPool {
     public synchronized void discardPage(PageId pid) {
         // some code goes here
         // not necessary for lab1
+        buffers.remove(pid.hashCode());
     }
 
     /**
@@ -230,7 +243,11 @@ public class BufferPool {
         Catalog ctlg = Database.getCatalog();
         DbFile f     = ctlg.getDatabaseFile(pid.getTableId());
         Page p       =  buffers.get(pid.hashCode());
-        f.writePage(p);
+        TransactionId tid = p.isDirty();
+        if (tid != null) {
+            f.writePage(p);
+            p.markDirty(false, tid);
+        }
     }
 
     /** Write all pages of the specified transaction to disk.
@@ -247,6 +264,25 @@ public class BufferPool {
     private synchronized  void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
+        //System.out.println("evict page");
+        try {
+            Iterator<Integer> keys = buffers.keySet().iterator();
+            while (keys.hasNext()) {
+               int key = keys.next();
+               Page p  = buffers.get(key);
+               if (p.isDirty() != null) {
+                   //System.out.println("key:"+key);
+                   flushPage(p.getId());
+                   buffers.remove(p.getId().hashCode());
+                   break;
+               }
+               else {
+                   discardPage(p.getId());
+                   break;
+               }
+            }
+        } catch (IOException e) {
+        }
     }
 
 }
