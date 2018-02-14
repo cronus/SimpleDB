@@ -15,9 +15,7 @@ public class Insert extends Operator {
     private OpIterator[] children;
     private int tableId;
 
-    private int position;
-    private List<Tuple> tuples;
-
+    private int count;
     /**
      * Constructor.
      *
@@ -38,27 +36,32 @@ public class Insert extends Operator {
         this.children    = new OpIterator[1];
         this.children[0] = child;
         this.tableId     = tableId;
+
+        this.count       = 0;
     }
 
     public TupleDesc getTupleDesc() {
         // some code goes here
         //return null;
-        return children[0].getTupleDesc();
+        Type[] t     = {Type.INT_TYPE};
+        String[] str = {"COUNT"};
+        TupleDesc td = new TupleDesc(t, str);
+        return td;
     }
 
     public void open() throws DbException, TransactionAbortedException {
         // some code goes here
         super.open();
         children[0].open();
-        position = 0;
+        count = 0;
 
         BufferPool bp = Database.getBufferPool();
-        tuples   = new ArrayList<Tuple>();
 
         try {
             while (children[0].hasNext()) {
                 Tuple t = children[0].next();
                 bp.insertTuple(tid, tableId, t);
+                count++;
             }
         } catch (IOException e) {
         }
@@ -68,13 +71,12 @@ public class Insert extends Operator {
         // some code goes here
         super.close();
         children[0].close();
-        tuples = null;
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
         children[0].rewind();
-        position = 0;
+        count = 0;
 
         //insert child into table of tableId
     }
@@ -95,11 +97,10 @@ public class Insert extends Operator {
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
         //return null;
-        if (position < tuples.size()) {
-            return tuples.get(position++);
-        }
-        else
-            return null;
+        TupleDesc td = getTupleDesc();
+        Tuple tuple  = new Tuple(td);
+        tuple.setField(0, new IntField(count));
+        return tuple;
     }
 
     @Override
