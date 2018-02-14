@@ -1,5 +1,8 @@
 package simpledb;
 
+import java.io.*;
+import java.util.*;
+
 /**
  * Inserts tuples read from the child operator into the tableId specified in the
  * constructor
@@ -7,6 +10,13 @@ package simpledb;
 public class Insert extends Operator {
 
     private static final long serialVersionUID = 1L;
+
+    private TransactionId tid;
+    private OpIterator[] children;
+    private int tableId;
+
+    private int position;
+    private List<Tuple> tuples;
 
     /**
      * Constructor.
@@ -24,23 +34,49 @@ public class Insert extends Operator {
     public Insert(TransactionId t, OpIterator child, int tableId)
             throws DbException {
         // some code goes here
+        this.tid         = t;
+        this.children    = new OpIterator[1];
+        this.children[0] = child;
+        this.tableId     = tableId;
     }
 
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+        //return null;
+        return children[0].getTupleDesc();
     }
 
     public void open() throws DbException, TransactionAbortedException {
         // some code goes here
+        super.open();
+        children[0].open();
+        position = 0;
+
+        BufferPool bp = Database.getBufferPool();
+        tuples   = new ArrayList<Tuple>();
+
+        try {
+            while (children[0].hasNext()) {
+                Tuple t = children[0].next();
+                bp.insertTuple(tid, tableId, t);
+            }
+        } catch (IOException e) {
+        }
     }
 
     public void close() {
         // some code goes here
+        super.close();
+        children[0].close();
+        tuples = null;
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
+        children[0].rewind();
+        position = 0;
+
+        //insert child into table of tableId
     }
 
     /**
@@ -58,17 +94,24 @@ public class Insert extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
-        return null;
+        //return null;
+        if (position < tuples.size()) {
+            return tuples.get(position++);
+        }
+        else
+            return null;
     }
 
     @Override
     public OpIterator[] getChildren() {
         // some code goes here
-        return null;
+        //return null;
+        return children;
     }
 
     @Override
     public void setChildren(OpIterator[] children) {
         // some code goes here
+        children = children;
     }
 }
