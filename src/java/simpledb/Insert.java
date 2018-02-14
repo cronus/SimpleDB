@@ -15,6 +15,7 @@ public class Insert extends Operator {
     private OpIterator[] children;
     private int tableId;
 
+    private int position;
     private int count;
     /**
      * Constructor.
@@ -37,6 +38,7 @@ public class Insert extends Operator {
         this.children[0] = child;
         this.tableId     = tableId;
 
+        this.position    = 0;
         this.count       = 0;
     }
 
@@ -53,7 +55,8 @@ public class Insert extends Operator {
         // some code goes here
         super.open();
         children[0].open();
-        count = 0;
+        position = 0;
+        count    = 0;
 
         BufferPool bp = Database.getBufferPool();
 
@@ -76,7 +79,7 @@ public class Insert extends Operator {
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
         children[0].rewind();
-        count = 0;
+        position = 0;
 
         //insert child into table of tableId
     }
@@ -97,10 +100,15 @@ public class Insert extends Operator {
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
         //return null;
-        TupleDesc td = getTupleDesc();
-        Tuple tuple  = new Tuple(td);
-        tuple.setField(0, new IntField(count));
-        return tuple;
+        if (position == 0) {
+            TupleDesc td = getTupleDesc();
+            Tuple tuple  = new Tuple(td);
+            tuple.setField(0, new IntField(count));
+            position++;
+            return tuple;
+        }
+        else
+            return null;
     }
 
     @Override
