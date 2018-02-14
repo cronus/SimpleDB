@@ -19,7 +19,7 @@ public class HeapFile implements DbFile {
     private File f;
     private TupleDesc td;
     private List<Tuple> tuples;
-    private ArrayList<Page> pages;
+    private ArrayList<Page> dirtypages;
     /**
      * Constructs a heap file backed by the specified file.
      * 
@@ -29,10 +29,10 @@ public class HeapFile implements DbFile {
      */
     public HeapFile(File f, TupleDesc td) {
         // some code goes here
-        this.f      = f;
-        this.td     = td;
-        this.tuples = new ArrayList<Tuple>();
-        this.pages  = new ArrayList<Page>();
+        this.f           = f;
+        this.td          = td;
+        this.tuples      = new ArrayList<Tuple>();
+        this.dirtypages  = new ArrayList<Page>();
     }
 
     /**
@@ -139,13 +139,13 @@ public class HeapFile implements DbFile {
         BufferPool bp      = Database.getBufferPool();
         boolean insertDone = false;
 
-        pages.clear();
         for (int i = 0; i < n; i++) {
             HeapPageId hpId = new HeapPageId(tableid, i);
             HeapPage hp     = (HeapPage) bp.getPage(tid, hpId, Permissions.READ_WRITE);
             if (hp.getNumEmptySlots() != 0) {
                 hp.insertTuple(t);
                 insertDone = true;
+                dirtypages.add(hp);
                 break;
             }
         }
@@ -157,14 +157,10 @@ public class HeapFile implements DbFile {
             writePage(nhp);
             nhp              = (HeapPage) bp.getPage(tid, nhpId, Permissions.READ_WRITE);
             nhp.insertTuple(t);
+            dirtypages.add(nhp);
         }
 
-        for (int i = 0; i < n; i++) {
-            HeapPageId hpId2 = new HeapPageId(tableid, i);
-            HeapPage hp2 = (HeapPage) bp.getPage(tid, hpId2, Permissions.READ_WRITE);
-            pages.add(hp2);
-        }
-        return pages;
+        return dirtypages;
     }
 
     // see DbFile.java for javadocs
@@ -173,7 +169,6 @@ public class HeapFile implements DbFile {
         // some code goes here
         //return null;
         // not necessary for lab1
-        pages.clear();
         HeapPageId hpId = (HeapPageId) t.getRecordId().getPageId();
         BufferPool bp = Database.getBufferPool();
         HeapPage hp = (HeapPage) bp.getPage(tid, hpId, Permissions.READ_WRITE);
@@ -182,14 +177,8 @@ public class HeapFile implements DbFile {
         //System.out.println("d:"+hp.getNumEmptySlots());
         //System.out.println("heapfile:"+bp);
 
-        int n       = numPages();
-        int tableid = getId();
-        for (int i = 0; i < n; i++) {
-            HeapPageId hpId2 = new HeapPageId(tableid, i);
-            HeapPage hp2 = (HeapPage) bp.getPage(tid, hpId2, Permissions.READ_WRITE);
-            pages.add(hp2);
-        }
-        return pages;
+        dirtypages.add(hp);
+        return dirtypages;
     }
 
     private class HeapFileIterator extends AbstractDbFileIterator {

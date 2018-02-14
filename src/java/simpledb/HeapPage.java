@@ -288,13 +288,16 @@ public class HeapPage implements Page {
             throw new DbException("TupleDesc doesn't match!");
         }
         else {
+            //System.out.println("[debug]HeapPage:insertTuple");
             RecordId rid    = t.getRecordId();
             int tupleno; 
+            // find the empty slot
             for (tupleno = 0; tupleno < 8 * header.length; tupleno++) {
                 if (!isSlotUsed(tupleno)) {
                     break;
                 }
             }
+            //System.out.println("[debug]"+tupleno);
             RecordId ridUpdate = new RecordId(pid, tupleno);
             t.setRecordId(ridUpdate);
             tuples[tupleno] = t;
@@ -380,6 +383,7 @@ public class HeapPage implements Page {
         //return null;
         List<Tuple> NonEmpTuples = new ArrayList<Tuple>();
         for (int i = 0; i < tuples.length; i++) {
+            //System.out.println(isSlotUsed(i));
             if (isSlotUsed(i))
                 NonEmpTuples.add(tuples[i]);
         }
