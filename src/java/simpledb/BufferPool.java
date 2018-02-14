@@ -160,7 +160,11 @@ public class BufferPool {
         // not necessary for lab1
         Catalog ctlg = Database.getCatalog();
         HeapFile hf  = (HeapFile) ctlg.getDatabaseFile(tableId);
-        hf.insertTuple(tid, t);
+        ArrayList<Page> dirtyPages = hf.insertTuple(tid, t);
+        for (Page dirtyPage : dirtyPages) {
+            dirtyPage.markDirty(true, tid);
+            buffers.put(dirtyPage.getId().hashCode(), dirtyPage);
+        }
     }
 
     /**
@@ -183,7 +187,11 @@ public class BufferPool {
         int tableId  = t.getRecordId().getPageId().getTableId();
         Catalog ctlg = Database.getCatalog();
         HeapFile hf  = (HeapFile) ctlg.getDatabaseFile(tableId);
-        hf.deleteTuple(tid, t);
+        ArrayList<Page> dirtyPages = hf.deleteTuple(tid, t);
+        for (Page dirtyPage : dirtyPages) {
+            dirtyPage.markDirty(true, tid);
+            buffers.put(dirtyPage.getId().hashCode(), dirtyPage);
+        }
 
         //System.out.println("bufferpool.java:"+this);
     }
