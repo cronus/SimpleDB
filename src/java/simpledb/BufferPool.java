@@ -74,9 +74,9 @@ public class BufferPool {
         //look up the page in the buffer pool
         //if exist, return
         //System.out.println("pg hashcode:"+pid.hashCode());
-        System.out.println("buffer size:"+buffers.size());
+        //System.out.println("buffer size:"+buffers.size());
         if (buffers.containsKey(pid.hashCode())) {
-            //System.out.println("Read from buffer pool."+pid.hashCode());
+            System.out.println("Read from buffer pool."+pid.hashCode());
             return buffers.get(pid.hashCode());
         }
         //if not present, add to the buffer pool, new page is added.
@@ -85,7 +85,7 @@ public class BufferPool {
             DbFile f     = ctlg.getDatabaseFile(pid.getTableId());
             Page p       = f.readPage(pid);
             if (p != null) {
-                //System.out.println("[debug]Fetch page from disk");
+                //System.out.println("[debug]Fetch page from disk:"+pid.hashCode());
                 if (buffers.size() == 16) {
                     evictPage();
                 }

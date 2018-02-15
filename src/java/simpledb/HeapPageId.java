@@ -48,7 +48,7 @@ public class HeapPageId implements PageId {
         //System.out.println(Integer.toBinaryString((tableId & 0xff)));
         //System.out.println(Integer.toBinaryString(pgNo));
         String result = Integer.toBinaryString(tableId & 0xFF) + 
-                        Integer.toBinaryString(pgNo & 0xFF);
+                        Integer.toBinaryString(pgNo & 0xFFFF);
         //System.out.println(result);
         return Integer.parseInt(result, 2);
     }
