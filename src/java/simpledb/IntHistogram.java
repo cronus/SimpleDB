@@ -1,5 +1,7 @@
 package simpledb;
 
+import java.lang.*;
+
 /** A class to represent a fixed-width histogram over a single integer-based field.
  */
 public class IntHistogram {
@@ -35,7 +37,7 @@ public class IntHistogram {
         this.buckets = buckets;
         this.min     = min;
         this.max     = max;
-        this.step    = (double)(max - min) / buckets;
+        this.step    = Math.ceil((max - min) / buckets);
         this.totalCount = 0;
 
         this.bucketCount  = new int[buckets];
@@ -82,28 +84,31 @@ public class IntHistogram {
     	// some code goes here
         //return -1.0;
         double selectivity = 0;
-        for (int i = 0; i < buckets; i++) {
-            if (leftBrdy[i] < v && v < rightBrdy[i]) {
-                if (op == Predicate.Op.EQUALS) {
-                    return bucketCount[i] / (totalCount * step);
+        int bucketno = (int) ((double)(v - min) / step);
+
+        if (v == max) {
+            bucketno -= 1;
+        }
+        else {
+            if (op == Predicate.Op.EQUALS) {
+                System.out.println("cnt:"+bucketCount[bucketno]+" total:"+totalCount+" step:"+step);
+                selectivity = bucketCount[bucketno] / (totalCount * step);
+                System.out.println("equal:"+selectivity);
+            }
+            else if (op == Predicate.Op.GREATER_THAN) {
+                selectivity += (rightBrdy[bucketno] - v) * bucketCount[bucketno] / (totalCount * step);
+                for (int i = bucketno + 1; i < buckets; i++) {
+                    selectivity += bucketCount[bucketno] / (totalCount * step);      
                 }
-                else if (op == Predicate.Op.GREATER_THAN) {
-                    selectivity += (rightBrdy[i] - v) * bucketCount[i] / totalCount;
-                    for (int j = i + 1; j < buckets; j++) {
-                        selectivity += bucketCount[j] / totalCount;      
-                    }
-                    return selectivity;
-                }
-                else if (op == Predicate.Op.LESS_THAN) {
-                    selectivity += (v - leftBrdy[i]) * bucketCount[i] / totalCount;
-                    for (int j = i - 1; j >= 0; j--) {
-                        selectivity += bucketCount[j] / totalCount;      
-                    }
-                    return selectivity;
+            }
+            else if (op == Predicate.Op.LESS_THAN) {
+                selectivity += (v - leftBrdy[bucketno]) * bucketCount[bucketno] / (totalCount * step);
+                for (int i = bucketno - 1; i >= 0; i--) {
+                    selectivity += bucketCount[i] / (totalCount * step);      
                 }
             }
         }
-        return -1.0;
+        return selectivity;
     }
     
     /**
