@@ -4,6 +4,16 @@ package simpledb;
  */
 public class IntHistogram {
 
+    private int buckets;
+    private int min;
+    private int max;
+    private double step;
+    private int totalCount;
+
+    private int[] bucketCount;
+    private double[] leftBrdy;
+    private double[] rightBrdy;
+
     /**
      * Create a new IntHistogram.
      * 
@@ -22,6 +32,20 @@ public class IntHistogram {
      */
     public IntHistogram(int buckets, int min, int max) {
     	// some code goes here
+        this.buckets = buckets;
+        this.min     = min;
+        this.max     = max;
+        this.step    = (max - min) / buckets;
+        this.totalCount = 0;
+
+        this.bucketCount  = new int[buckets];
+        this.leftBrdy     = new double[buckets];
+        this.rightBrdy    = new double[buckets];
+
+        for (int i = 0; i < buckets; i++) {
+            leftBrdy[i]  = min + i * step;
+            rightBrdy[i] = min + (i + 1) * step;
+        }
     }
 
     /**
@@ -30,6 +54,13 @@ public class IntHistogram {
      */
     public void addValue(int v) {
     	// some code goes here
+        totalCount++;
+        for (int i = 0; i < buckets; i++) {
+            if (leftBrdy[i] < v && v < rightBrdy[i]) {
+                bucketCount[i]++;
+                break;
+            }
+        }
     }
 
     /**
@@ -45,6 +76,29 @@ public class IntHistogram {
     public double estimateSelectivity(Predicate.Op op, int v) {
 
     	// some code goes here
+        //return -1.0;
+        double selectivity = 0;
+        for (int i = 0; i < buckets; i++) {
+            if (leftBrdy[i] < v && v < rightBrdy[i]) {
+                if (op == Predicate.Op.EQUALS) {
+                    return bucketCount[i] / (totalCount * step);
+                }
+                else if (op == Predicate.Op.GREATER_THAN) {
+                    selectivity += (rightBrdy[i] - v) * bucketCount[i] / totalCount;
+                    for (int j = i + 1; j < buckets; j++) {
+                        selectivity += bucketCount[j] / totalCount;      
+                    }
+                    return selectivity;
+                }
+                else if (op == Predicate.Op.LESS_THAN) {
+                    selectivity += (v - leftBrdy[i]) * bucketCount[i] / totalCount;
+                    for (int j = i - 1; j >= 0; j--) {
+                        selectivity += bucketCount[j] / totalCount;      
+                    }
+                    return selectivity;
+                }
+            }
+        }
         return -1.0;
     }
     
