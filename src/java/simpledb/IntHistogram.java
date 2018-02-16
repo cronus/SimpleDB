@@ -35,7 +35,7 @@ public class IntHistogram {
         this.buckets = buckets;
         this.min     = min;
         this.max     = max;
-        this.step    = (max - min) / buckets;
+        this.step    = (double)(max - min) / buckets;
         this.totalCount = 0;
 
         this.bucketCount  = new int[buckets];
@@ -55,11 +55,15 @@ public class IntHistogram {
     public void addValue(int v) {
     	// some code goes here
         totalCount++;
-        for (int i = 0; i < buckets; i++) {
-            if (leftBrdy[i] < v && v < rightBrdy[i]) {
-                bucketCount[i]++;
-                break;
-            }
+        //System.out.println("bucket:"+buckets);
+        //System.out.println("v:"+v+" min:"+min+" step:"+step);
+        if (v == max) {
+            bucketCount[buckets - 1]++;
+        }
+        else {
+            int bucketno = (int) ((double)(v - min) / step);
+            //System.out.println(bucketno);
+            bucketCount[bucketno]++;
         }
     }
 
