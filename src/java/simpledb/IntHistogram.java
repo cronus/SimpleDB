@@ -178,7 +178,11 @@ public class IntHistogram {
     public double avgSelectivity()
     {
         // some code goes here
-        return 1.0;
+        double avg = 0;
+        for (int i = min; i <= max; i++) {
+            avg += estimateSelectivity(Predicate.Op.EQUALS, i); 
+        }
+        return avg;
     }
     
     /**
@@ -186,6 +190,10 @@ public class IntHistogram {
      */
     public String toString() {
         // some code goes here
-        return null;
+        String intHistogramStr = "";
+        for (int i = 0; i < buckets; i++) {
+            intHistogramStr += leftBrdy[i]+":"+rightBrdy[i]+"\t"+bucketCount[i]+"\n";
+        }
+        return intHistogramStr;
     }
 }

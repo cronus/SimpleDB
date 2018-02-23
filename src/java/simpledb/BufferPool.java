@@ -76,7 +76,7 @@ public class BufferPool {
         //System.out.println("pg hashcode:"+pid.hashCode());
         //System.out.println("buffer size:"+buffers.size());
         if (buffers.containsKey(pid.hashCode())) {
-            System.out.println("Read from buffer pool."+pid.hashCode());
+            //System.out.println("Read from buffer pool."+pid.hashCode());
             return buffers.get(pid.hashCode());
         }
         //if not present, add to the buffer pool, new page is added.
