@@ -37,7 +37,7 @@ public class IntHistogram {
         this.buckets = buckets;
         this.min     = min;
         this.max     = max;
-        this.step    = Math.ceil((max - min) / buckets);
+        this.step    = ((double) max - min) / buckets;
         this.totalCount = 0;
 
         this.bucketCount  = new int[buckets];
@@ -83,30 +83,86 @@ public class IntHistogram {
 
     	// some code goes here
         //return -1.0;
+
+
+        //System.out.println("min:"+min+" max:"+max+" v:"+v);
         double selectivity = 0;
+        int width;
         int bucketno = (int) ((double)(v - min) / step);
+
 
         if (v == max) {
             bucketno -= 1;
         }
-        else {
-            if (op == Predicate.Op.EQUALS) {
-                System.out.println("cnt:"+bucketCount[bucketno]+" total:"+totalCount+" step:"+step);
-                selectivity = bucketCount[bucketno] / (totalCount * step);
-                System.out.println("equal:"+selectivity);
+
+        double left  = min + bucketno * step;
+        double right = min + (bucketno + 1) * step;
+
+        width = (int) (Math.floor(right) - Math.ceil(left)) + 1;
+
+        //System.out.println("left:"+left+" right:"+right+" width:"+width);
+
+        if (op == Predicate.Op.EQUALS) {
+            //System.out.println("bucket no:"+bucketno+" cnt:"+bucketCount[bucketno]+" total:"+totalCount+" step:"+step);
+            selectivity = (double) bucketCount[bucketno] / (totalCount * width);
+            //System.out.println("equal case selectivity:"+selectivity);
+        }
+        else if (op == Predicate.Op.NOT_EQUALS) {
+            selectivity = 1 - (double) bucketCount[bucketno] / (totalCount * width);
+        }
+        else if (op == Predicate.Op.GREATER_THAN) {
+            if (v < min) {
+                return 1.0;
             }
-            else if (op == Predicate.Op.GREATER_THAN) {
-                selectivity += (rightBrdy[bucketno] - v) * bucketCount[bucketno] / (totalCount * step);
-                for (int i = bucketno + 1; i < buckets; i++) {
-                    selectivity += bucketCount[bucketno] / (totalCount * step);      
-                }
+            else if (v > max) {
+                return 0.0;
             }
-            else if (op == Predicate.Op.LESS_THAN) {
-                selectivity += (v - leftBrdy[bucketno]) * bucketCount[bucketno] / (totalCount * step);
-                for (int i = bucketno - 1; i >= 0; i--) {
-                    selectivity += bucketCount[i] / (totalCount * step);      
-                }
+            //System.out.println("bucket no:"+bucketno+" cnt:"+bucketCount[bucketno]+" total:"+totalCount+" step:"+step);
+            selectivity += (rightBrdy[bucketno] - v) * bucketCount[bucketno] / (totalCount * width);
+            for (int i = bucketno + 1; i < buckets; i++) {
+                selectivity += (double) bucketCount[i] / totalCount;      
             }
+            //System.out.println("greater than case selectivity:"+selectivity);
+        }
+        else if (op == Predicate.Op.GREATER_THAN_OR_EQ) {
+            if (v < min) {
+                return 1.0;
+            }
+            else if (v > max) {
+                return 0.0;
+            }
+            //System.out.println("bucket no:"+bucketno+" cnt:"+bucketCount[bucketno]+" total:"+totalCount+" step:"+step);
+            selectivity += (rightBrdy[bucketno] - v + 1) * bucketCount[bucketno] / (totalCount * width);
+            for (int i = bucketno + 1; i < buckets; i++) {
+                selectivity += (double) bucketCount[i] / totalCount;      
+            }
+            //System.out.println("greater than or eq case selectivity:"+selectivity);
+        }
+        else if (op == Predicate.Op.LESS_THAN) {
+            if (v > max) {
+                return 1.0;
+            }
+            else if (v < min) {
+                return 0.0;
+            }
+            selectivity += (v - leftBrdy[bucketno]) * bucketCount[bucketno] / (totalCount * width);
+            for (int i = bucketno - 1; i >= 0; i--) {
+                selectivity += (double) bucketCount[i] / totalCount;      
+            }
+            //System.out.println("less than case selectivity:"+selectivity);
+        }
+        else if (op == Predicate.Op.LESS_THAN_OR_EQ) {
+            if (v > max) {
+                return 1.0;
+            }
+            else if (v < min) {
+                return 0.0;
+            }
+            selectivity += (v - leftBrdy[bucketno] + 1) * bucketCount[bucketno] / (totalCount * width);
+            for (int i = bucketno - 1; i >= 0; i--) {
+                selectivity += (double) bucketCount[i] / totalCount;      
+            }
+            //System.out.println("less than or eq case selectivity:"+selectivity);
         }
         return selectivity;
     }
