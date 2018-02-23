@@ -70,6 +70,7 @@ public class TableStats {
 
     private IntHistogram[] stats;
     private int ioCostPerPage;
+    private int tupleSize;
     private HeapFile df;
 
     /**
@@ -92,6 +93,7 @@ public class TableStats {
         // in a single scan of the table.
         // some code goes here
         this.ioCostPerPage   = ioCostPerPage;
+        this.tupleSize       = 0;
         this.df              = (HeapFile) Database.getCatalog().getDatabaseFile(tableid);
         TupleDesc td         = Database.getCatalog().getTupleDesc(tableid);
         int numCol           = td.numFields();
@@ -105,6 +107,7 @@ public class TableStats {
             Arrays.fill(max, Integer.MIN_VALUE);
             Arrays.fill(min, Integer.MAX_VALUE);
             while (dbfit.hasNext()) {
+                tupleSize++;
                 Tuple t = dbfit.next();
                 for (int i = 0; i < numCol; i++) {
                     IntField f  = (IntField) t.getField(i);
@@ -166,7 +169,8 @@ public class TableStats {
      */
     public int estimateTableCardinality(double selectivityFactor) {
         // some code goes here
-        return 0;
+        //return 0;
+        return (int) (tupleSize * selectivityFactor);
     }
 
     /**
@@ -199,7 +203,9 @@ public class TableStats {
      */
     public double estimateSelectivity(int field, Predicate.Op op, Field constant) {
         // some code goes here
-        return 1.0;
+        //return 1.0;
+        IntField f = (IntField) constant;
+        return stats[field].estimateSelectivity(op, f.getValue());
     }
 
     /**

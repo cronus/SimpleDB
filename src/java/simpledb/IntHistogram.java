@@ -103,11 +103,15 @@ public class IntHistogram {
         //System.out.println("left:"+left+" right:"+right+" width:"+width);
 
         if (op == Predicate.Op.EQUALS) {
-            //System.out.println("bucket no:"+bucketno+" cnt:"+bucketCount[bucketno]+" total:"+totalCount+" step:"+step);
+            if (v > max || v < min)
+                return 0.0;
+            //System.out.println("bucket no:"+bucketno+" array len:"+bucketCount.length+" total:"+totalCount+" step:"+step);
             selectivity = (double) bucketCount[bucketno] / (totalCount * width);
             //System.out.println("equal case selectivity:"+selectivity);
         }
         else if (op == Predicate.Op.NOT_EQUALS) {
+            if (v > max || v < min)
+                return 1.0;
             selectivity = 1 - (double) bucketCount[bucketno] / (totalCount * width);
         }
         else if (op == Predicate.Op.GREATER_THAN) {
