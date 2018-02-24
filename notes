@@ -163,4 +163,5 @@ Something like that. Of course you need to free that when you are done.
               System.out.println(m[i].toString());
             }
 
-22. 
+22. Vector
+    Vector is almost identical to ArrayList, and the difference is that Vector is synchronized. Because of this, it has an overhead than ArrayList.

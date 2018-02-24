@@ -236,6 +236,19 @@ public class JoinOptimizer {
      * @throws ParsingException
      *             when stats or filter selectivities is missing a table in the
      *             join, or or when another internal error occurs
+     *
+     * pseduo code:
+     * 1.     j = set of join nodes
+     * 2.     for (i in 1...|j|):
+     * 3.         for s in {all length i subsets of j}
+     * 4.             bestplan = {}
+     * 5.             for s' in {all length i - 1 subsets of s}
+     * 6.                 subplan = optjoin(s')                          ---
+     * 7.                 plan = best way to join (s - s') to subplan      | -- implemented by computeCostAndCardOfSubplan
+     * 8.                 if (cost(plan) < cost(bestplan))                 |
+     * 9.                     bestPlan = plan                            ---
+     * 10.             optjoin(s) = bestPlan
+     * 11.     return optjoin(j)
      */
     public Vector<LogicalJoinNode> orderJoins(
             HashMap<String, TableStats> stats,
@@ -244,8 +257,27 @@ public class JoinOptimizer {
         //Not necessary for labs 1--3
 
         // some code goes here
+        CostCard cc = new CostCard();
+        cc.cost = Double.MAX_VALUE;
+        PlanCache pc = new PlanCache();
+        for (int i = 1; i < joins.size(); i++) {
+            // get all length i subsets of join nodes
+            Set<Set<LogicalJoinNode>> subss = enumerateSubsets(joins, i);
+            Iterator<Set<LogicalJoinNode>> subssIt  = subss.iterator();
+            // iterator s in {all length i subsets of join nodes}
+            while (subssIt.hasNext()) {
+                Set<LogicalJoinNode> subset = subssIt.next();
+                Iterator<LogicalJoinNode> subsIt = subset.iterator();
+                while (subsIt.hasNext()) {
+                    LogicalJoinNode joinToRemove = subsIt.next();
+                    cc = computeCostAndCardOfSubplan(stats, filterSelectivities, joinToRemove, subset, cc.cost, pc);
+                }
+            }
+        }
+        //printJoins();
+
         //Replace the following
-        return joins;
+        return cc.plan;
     }
 
     // ===================== Private Methods =================================
