@@ -257,21 +257,32 @@ public class JoinOptimizer {
         //Not necessary for labs 1--3
 
         // some code goes here
-        CostCard cc = new CostCard();
-        cc.cost = Double.MAX_VALUE;
+        CostCard cc  = new CostCard();
         PlanCache pc = new PlanCache();
-        for (int i = 1; i < joins.size(); i++) {
+        PlanCache pc_next = new PlanCache();
+        double bestCostSoFar; 
+        for (int i = 1; i <= joins.size(); i++) {
             // get all length i subsets of join nodes
-            Set<Set<LogicalJoinNode>> subss = enumerateSubsets(joins, i);
+            Set<Set<LogicalJoinNode>> subss         = enumerateSubsets(joins, i);
             Iterator<Set<LogicalJoinNode>> subssIt  = subss.iterator();
             // iterator s in {all length i subsets of join nodes}
             while (subssIt.hasNext()) {
                 Set<LogicalJoinNode> subset = subssIt.next();
                 Iterator<LogicalJoinNode> subsIt = subset.iterator();
+                cc.cost      = Double.MAX_VALUE;
                 while (subsIt.hasNext()) {
                     LogicalJoinNode joinToRemove = subsIt.next();
-                    cc = computeCostAndCardOfSubplan(stats, filterSelectivities, joinToRemove, subset, cc.cost, pc);
+                    System.out.println("i:"+i+" "+joinToRemove);
+                    bestCostSoFar = cc.cost; 
+                    CostCard ccTmp = computeCostAndCardOfSubplan(stats, filterSelectivities, joinToRemove, subset, bestCostSoFar, pc);
+                    if (ccTmp != null) {
+                        System.out.println("update cc");
+                        cc = ccTmp;
+                    }
+                    pc_next.addPlan(subset, cc.cost, cc.card, cc.plan);
                 }
+                pc      = pc_next;
+                pc_next = new PlanCache();
             }
         }
         //printJoins();
