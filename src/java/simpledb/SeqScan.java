@@ -11,6 +11,12 @@ public class SeqScan implements OpIterator {
 
     private static final long serialVersionUID = 1L;
 
+    private TransactionId tid;
+    private int tableid;
+    private String tableAlias;
+    private Catalog ctlg       = Database.getCatalog();
+    private BufferPool bp      = Database.getBufferPool();
+    private DbFileIterator fit = null;
     /**
      * Creates a sequential scan over the specified table as a part of the
      * specified transaction.
@@ -29,6 +35,9 @@ public class SeqScan implements OpIterator {
      */
     public SeqScan(TransactionId tid, int tableid, String tableAlias) {
         // some code goes here
+        this.tid        = tid;
+        this.tableid    = tableid;
+        this.tableAlias = tableAlias;
     }
 
     /**
@@ -37,7 +46,7 @@ public class SeqScan implements OpIterator {
      *       be the actual name of the table in the catalog of the database
      * */
     public String getTableName() {
-        return null;
+        return ctlg.getTableName(tableid);
     }
 
     /**
@@ -46,7 +55,8 @@ public class SeqScan implements OpIterator {
     public String getAlias()
     {
         // some code goes here
-        return null;
+        //return null;
+        return tableAlias;
     }
 
     /**
@@ -63,6 +73,9 @@ public class SeqScan implements OpIterator {
      */
     public void reset(int tableid, String tableAlias) {
         // some code goes here
+        this.tableid    = tableid;
+        this.tableAlias = tableAlias;
+
     }
 
     public SeqScan(TransactionId tid, int tableId) {
@@ -71,6 +84,9 @@ public class SeqScan implements OpIterator {
 
     public void open() throws DbException, TransactionAbortedException {
         // some code goes here
+        DbFile f = ctlg.getDatabaseFile(tableid);
+        fit = f.iterator(tid);
+        fit.open();
     }
 
     /**
@@ -85,26 +101,40 @@ public class SeqScan implements OpIterator {
      */
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+        //return null;
+        TupleDesc t     = ctlg.getTupleDesc(tableid);
+        int n           = t.numFields();
+        Type[] typeAr   = new Type[n];
+        String[] nameAr = new String[n];
+        for (int i = 0; i < n; i++) {
+            typeAr[i] = t.getFieldType(i);
+            nameAr[i] = tableAlias + "." + t.getFieldName(i);       
+        }
+        TupleDesc prefixedt = new TupleDesc(typeAr, nameAr);
+        return prefixedt;
     }
 
     public boolean hasNext() throws TransactionAbortedException, DbException {
         // some code goes here
-        return false;
+        //return false;
+        return fit.hasNext();
     }
 
     public Tuple next() throws NoSuchElementException,
             TransactionAbortedException, DbException {
         // some code goes here
-        return null;
+        //return null;
+        return fit.next();
     }
 
     public void close() {
         // some code goes here
+        fit = null;
     }
 
     public void rewind() throws DbException, NoSuchElementException,
             TransactionAbortedException {
         // some code goes here
+        fit.rewind();
     }
 }
