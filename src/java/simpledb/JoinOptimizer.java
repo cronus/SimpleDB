@@ -111,7 +111,8 @@ public class JoinOptimizer {
             // HINT: You may need to use the variable "j" if you implemented
             // a join algorithm that's more complicated than a basic
             // nested-loops join.
-            return -1.0;
+            //return -1.0;
+            return cost1 + card1 * cost2 + card1 * card2;
         }
     }
 
@@ -157,6 +158,29 @@ public class JoinOptimizer {
             Map<String, Integer> tableAliasToId) {
         int card = 1;
         // some code goes here
+        TableStats stat1 = stats.get(table1Alias);
+        TableStats stat2 = stats.get(table2Alias);
+        //int    tableid1  = tableAliasToId.get(table1Alias);
+        //int    tableid2  = tableAliasToId.get(table2Alias);
+
+        if (joinOp == Predicate.Op.EQUALS) {
+            if (t1pkey) {
+                card = card2;
+            }
+            else if (t1pkey) {
+                card = card1;
+            }
+            else {
+                if (card1 > card2)
+                    card = card1;
+                else
+                    card = card2;
+            }
+        }
+        else {
+            card = (int) (0.3 * card1 * card2);
+        }
+
         return card <= 0 ? 1 : card;
     }
 
@@ -212,6 +236,19 @@ public class JoinOptimizer {
      * @throws ParsingException
      *             when stats or filter selectivities is missing a table in the
      *             join, or or when another internal error occurs
+     *
+     * pseduo code:
+     * 1.     j = set of join nodes
+     * 2.     for (i in 1...|j|):
+     * 3.         for s in {all length i subsets of j}
+     * 4.             bestplan = {}
+     * 5.             for s' in {all length i - 1 subsets of s}
+     * 6.                 subplan = optjoin(s')                          ---
+     * 7.                 plan = best way to join (s - s') to subplan      | -- implemented by computeCostAndCardOfSubplan
+     * 8.                 if (cost(plan) < cost(bestplan))                 |
+     * 9.                     bestPlan = plan                            ---
+     * 10.             optjoin(s) = bestPlan
+     * 11.     return optjoin(j)
      */
     public Vector<LogicalJoinNode> orderJoins(
             HashMap<String, TableStats> stats,
@@ -220,8 +257,38 @@ public class JoinOptimizer {
         //Not necessary for labs 1--3
 
         // some code goes here
+        CostCard cc  = new CostCard();
+        PlanCache pc = new PlanCache();
+        PlanCache pc_next = new PlanCache();
+        double bestCostSoFar; 
+        for (int i = 1; i <= joins.size(); i++) {
+            // get all length i subsets of join nodes
+            Set<Set<LogicalJoinNode>> subss         = enumerateSubsets(joins, i);
+            Iterator<Set<LogicalJoinNode>> subssIt  = subss.iterator();
+            // iterator s in {all length i subsets of join nodes}
+            while (subssIt.hasNext()) {
+                Set<LogicalJoinNode> subset = subssIt.next();
+                Iterator<LogicalJoinNode> subsIt = subset.iterator();
+                cc.cost      = Double.MAX_VALUE;
+                while (subsIt.hasNext()) {
+                    LogicalJoinNode joinToRemove = subsIt.next();
+                    //System.out.println("i:"+i+" "+joinToRemove);
+                    bestCostSoFar = cc.cost; 
+                    CostCard ccTmp = computeCostAndCardOfSubplan(stats, filterSelectivities, joinToRemove, subset, bestCostSoFar, pc);
+                    if (ccTmp != null) {
+                        //System.out.println("update cc");
+                        cc = ccTmp;
+                    }
+                }
+                pc_next.addPlan(subset, cc.cost, cc.card, cc.plan);
+            }
+            pc      = pc_next;
+            pc_next = new PlanCache();
+        }
+        //printJoins();
+
         //Replace the following
-        return joins;
+        return cc.plan;
     }
 
     // ===================== Private Methods =================================

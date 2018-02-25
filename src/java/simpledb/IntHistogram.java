@@ -1,8 +1,20 @@
 package simpledb;
 
+import java.lang.*;
+
 /** A class to represent a fixed-width histogram over a single integer-based field.
  */
 public class IntHistogram {
+
+    private int buckets;
+    private int min;
+    private int max;
+    private double step;
+    private int totalCount;
+
+    private int[] bucketCount;
+    private double[] leftBrdy;
+    private double[] rightBrdy;
 
     /**
      * Create a new IntHistogram.
@@ -22,6 +34,20 @@ public class IntHistogram {
      */
     public IntHistogram(int buckets, int min, int max) {
     	// some code goes here
+        this.buckets = buckets;
+        this.min     = min;
+        this.max     = max;
+        this.step    = ((double) max - min) / buckets;
+        this.totalCount = 0;
+
+        this.bucketCount  = new int[buckets];
+        this.leftBrdy     = new double[buckets];
+        this.rightBrdy    = new double[buckets];
+
+        for (int i = 0; i < buckets; i++) {
+            leftBrdy[i]  = min + i * step;
+            rightBrdy[i] = min + (i + 1) * step;
+        }
     }
 
     /**
@@ -30,6 +56,17 @@ public class IntHistogram {
      */
     public void addValue(int v) {
     	// some code goes here
+        totalCount++;
+        //System.out.println("bucket:"+buckets);
+        //System.out.println("v:"+v+" min:"+min+" step:"+step);
+        if (v == max) {
+            bucketCount[buckets - 1]++;
+        }
+        else {
+            int bucketno = (int) ((double)(v - min) / step);
+            //System.out.println(bucketno);
+            bucketCount[bucketno]++;
+        }
     }
 
     /**
@@ -45,7 +82,93 @@ public class IntHistogram {
     public double estimateSelectivity(Predicate.Op op, int v) {
 
     	// some code goes here
-        return -1.0;
+        //return -1.0;
+
+
+        //System.out.println("min:"+min+" max:"+max+" v:"+v);
+        double selectivity = 0;
+        int width;
+        int bucketno = (int) ((double)(v - min) / step);
+
+
+        if (v == max) {
+            bucketno -= 1;
+        }
+
+        double left  = min + bucketno * step;
+        double right = min + (bucketno + 1) * step;
+
+        width = (int) (Math.floor(right) - Math.ceil(left)) + 1;
+
+        //System.out.println("left:"+left+" right:"+right+" width:"+width);
+
+        if (op == Predicate.Op.EQUALS) {
+            if (v > max || v < min)
+                return 0.0;
+            //System.out.println("bucket no:"+bucketno+" array len:"+bucketCount.length+" total:"+totalCount+" step:"+step);
+            selectivity = (double) bucketCount[bucketno] / (totalCount * width);
+            //System.out.println("equal case selectivity:"+selectivity);
+        }
+        else if (op == Predicate.Op.NOT_EQUALS) {
+            if (v > max || v < min)
+                return 1.0;
+            selectivity = 1 - (double) bucketCount[bucketno] / (totalCount * width);
+        }
+        else if (op == Predicate.Op.GREATER_THAN) {
+            if (v < min) {
+                return 1.0;
+            }
+            else if (v > max) {
+                return 0.0;
+            }
+            //System.out.println("bucket no:"+bucketno+" cnt:"+bucketCount[bucketno]+" total:"+totalCount+" step:"+step);
+            selectivity += (rightBrdy[bucketno] - v) * bucketCount[bucketno] / (totalCount * width);
+            for (int i = bucketno + 1; i < buckets; i++) {
+                selectivity += (double) bucketCount[i] / totalCount;      
+            }
+            //System.out.println("greater than case selectivity:"+selectivity);
+        }
+        else if (op == Predicate.Op.GREATER_THAN_OR_EQ) {
+            if (v < min) {
+                return 1.0;
+            }
+            else if (v > max) {
+                return 0.0;
+            }
+            //System.out.println("bucket no:"+bucketno+" cnt:"+bucketCount[bucketno]+" total:"+totalCount+" step:"+step);
+            selectivity += (rightBrdy[bucketno] - v + 1) * bucketCount[bucketno] / (totalCount * width);
+            for (int i = bucketno + 1; i < buckets; i++) {
+                selectivity += (double) bucketCount[i] / totalCount;      
+            }
+            //System.out.println("greater than or eq case selectivity:"+selectivity);
+        }
+        else if (op == Predicate.Op.LESS_THAN) {
+            if (v > max) {
+                return 1.0;
+            }
+            else if (v < min) {
+                return 0.0;
+            }
+            selectivity += (v - leftBrdy[bucketno]) * bucketCount[bucketno] / (totalCount * width);
+            for (int i = bucketno - 1; i >= 0; i--) {
+                selectivity += (double) bucketCount[i] / totalCount;      
+            }
+            //System.out.println("less than case selectivity:"+selectivity);
+        }
+        else if (op == Predicate.Op.LESS_THAN_OR_EQ) {
+            if (v > max) {
+                return 1.0;
+            }
+            else if (v < min) {
+                return 0.0;
+            }
+            selectivity += (v - leftBrdy[bucketno] + 1) * bucketCount[bucketno] / (totalCount * width);
+            for (int i = bucketno - 1; i >= 0; i--) {
+                selectivity += (double) bucketCount[i] / totalCount;      
+            }
+            //System.out.println("less than or eq case selectivity:"+selectivity);
+        }
+        return selectivity;
     }
     
     /**
@@ -59,7 +182,11 @@ public class IntHistogram {
     public double avgSelectivity()
     {
         // some code goes here
-        return 1.0;
+        double avg = 0;
+        for (int i = min; i <= max; i++) {
+            avg += estimateSelectivity(Predicate.Op.EQUALS, i); 
+        }
+        return avg;
     }
     
     /**
@@ -67,6 +194,10 @@ public class IntHistogram {
      */
     public String toString() {
         // some code goes here
-        return null;
+        String intHistogramStr = "";
+        for (int i = 0; i < buckets; i++) {
+            intHistogramStr += leftBrdy[i]+":"+rightBrdy[i]+"\t"+bucketCount[i]+"\n";
+        }
+        return intHistogramStr;
     }
 }
