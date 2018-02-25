@@ -272,18 +272,18 @@ public class JoinOptimizer {
                 cc.cost      = Double.MAX_VALUE;
                 while (subsIt.hasNext()) {
                     LogicalJoinNode joinToRemove = subsIt.next();
-                    System.out.println("i:"+i+" "+joinToRemove);
+                    //System.out.println("i:"+i+" "+joinToRemove);
                     bestCostSoFar = cc.cost; 
                     CostCard ccTmp = computeCostAndCardOfSubplan(stats, filterSelectivities, joinToRemove, subset, bestCostSoFar, pc);
                     if (ccTmp != null) {
-                        System.out.println("update cc");
+                        //System.out.println("update cc");
                         cc = ccTmp;
                     }
-                    pc_next.addPlan(subset, cc.cost, cc.card, cc.plan);
                 }
-                pc      = pc_next;
-                pc_next = new PlanCache();
+                pc_next.addPlan(subset, cc.cost, cc.card, cc.plan);
             }
+            pc      = pc_next;
+            pc_next = new PlanCache();
         }
         //printJoins();
 

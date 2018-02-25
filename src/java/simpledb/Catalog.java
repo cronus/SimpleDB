@@ -69,9 +69,11 @@ public class Catalog {
             int ConflictId = ids.next();
             Table tb = tables.get(ConflictId);
             if (tb.name.equals(name)) {
+                //System.out.println("remove name:"+name);
                 tables.remove(ConflictId); 
             }
         }
+        //System.out.println("addTable String name:"+name+" id:"+Id);
         tables.put(Id, new Table(file, name, pkeyField));
     }
 
@@ -97,10 +99,12 @@ public class Catalog {
     public int getTableId(String name) throws NoSuchElementException {
         // some code goes here
         //return 0;
+        //System.out.println("getTableId String name:"+name);
         Iterator<Integer> ids = tables.keySet().iterator();
         while (ids.hasNext()) {
             int id = ids.next();
             Table tb = tables.get(id);
+            //System.out.println("getTableId table name:"+tb.name);
             if (tb.name.equals(name))
                 return tb.file.getId();
 
