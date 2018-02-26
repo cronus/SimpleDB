@@ -112,15 +112,34 @@ public class BufferPool {
         // check lock
         if (buffers.containsKey(pid.hashCode())) {
 
+            //There are many possible ways to detect deadlock. 
+            //For example, you may implement a simple timeout policy that aborts a transaction if it has not completed after a given period of time. 
+            //Alternately, you may implement cycle-detection in a dependency graph data structure. 
+            //  In this scheme, you would check for cycles in a dependency graph whenever you attempt to grant a new lock, and abort something if a cycle exists.
+            long lockStart = System.currentTimeMillis();
+            //System.out.println(lockStart);
             if (perm == Permissions.READ_WRITE) {
                 Lock l = locks.get(pid.hashCode()); 
-                while (!(l.getLockType() == Lock.LockType.NO_LOCK || l.getTransactionId().equals(tid)));
+                while (!(l.getLockType() == Lock.LockType.NO_LOCK || l.getTransactionId().equals(tid))) {
+                    // deadlock detection
+                    long lockWait = System.currentTimeMillis() - lockStart;
+                    //System.out.println("wait X lock:"+lockWait);
+                    if (lockWait > 10)
+                        throw new TransactionAbortedException();
+
+                }
                 l.setLockType(Lock.LockType.X);
                 l.setTransactionId(tid);
             }
             else if (perm == Permissions.READ_ONLY) {
                 Lock l = locks.get(pid.hashCode()); 
-                while (!(l.getLockType() == Lock.LockType.NO_LOCK || l.getLockType() == Lock.LockType.S || l.getTransactionId() == tid));
+                while (!(l.getLockType() == Lock.LockType.NO_LOCK || l.getLockType() == Lock.LockType.S || l.getTransactionId() == tid)) {
+                    // deadlock detection
+                    long lockWait = System.currentTimeMillis() - lockStart;
+                    //System.out.println("wait S lock:"+lockWait);
+                    if (lockWait > 10)
+                        throw new TransactionAbortedException();
+                }
                 l.setLockType(Lock.LockType.S);
                 l.setTransactionId(tid);
             }
@@ -238,7 +257,8 @@ public class BufferPool {
                 }
             }
             // release all the lock related to tid
-            if (l.getTransactionId().equals(tid)) {
+            //System.out.println("Transaction Id:"+l.getTransactionId());
+            if (l.getTransactionId() != null && l.getTransactionId().equals(tid)) {
                 l.setLockType(Lock.LockType.NO_LOCK);
                 l.setTransactionId(null);
             }

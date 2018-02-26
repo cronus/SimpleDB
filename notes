@@ -149,6 +149,23 @@ Something like that. Of course you need to free that when you are done.
         FileOutputStream(File file, boolean append) 
     and set the boolean to true. That way, the data you write will be appended to the end of the file, rather than overwriting what was already there.
 
+    Best Way to Write Bytes in the Middle of a File in Java
+    Reading and Writing in the middle of a file is as simple as using a RandomAccessFile in Java.
+
+    RandomAccessFile, despite its name, is more like an InputStream and OutputStream and less like a File. It allows you to read or seek through bytes in a file and then begin writing over whichever bytes you care to stop at.
+
+    Once you discover this class, it is very easy to use if you have a basic understanding of regular file i/o.
+
+    A small example:
+
+        public static void aMethod(){
+            RandomAccessFile f = new RandomAccessFile(new File("whereDidIPutTHatFile"), "rw");
+            long aPositionWhereIWantToGo = 99;
+            f.seek(aPositionWhereIWantToGo); // this basically reads n bytes in the file
+            f.write("Im in teh fil, writn bites".getBytes());
+            f.close();
+        }
+
 21. Class Object (What does classname.class return?)
     It returns the same what Object.getClass() does for a given instance, but you can use it when you know statically what class you want (i.e. at compile time).
 
