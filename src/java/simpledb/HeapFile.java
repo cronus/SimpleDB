@@ -78,6 +78,7 @@ public class HeapFile implements DbFile {
         // check whether the page exists in this file
         if (pid.getPageNumber() >= numPages())
            throw new IllegalArgumentException();
+        //System.out.println("readPage:"+pid.getPageNumber());
         HeapPageId hpId = new HeapPageId(pid.getTableId(), pid.getPageNumber());
         HeapPage pg;
         // read the data from File f to byte[] buf
@@ -111,10 +112,17 @@ public class HeapFile implements DbFile {
     public void writePage(Page page) throws IOException {
         // some code goes here
         // not necessary for lab1
-        FileOutputStream os = new FileOutputStream(f, true);
+        PageId pid = page.getId();
+        //System.out.println(pageno);
+        //FileOutputStream os = new FileOutputStream(f, true);
+        RandomAccessFile fs = new RandomAccessFile(f, "rw");
+        int offset      = pid.getPageNumber() * Database.getBufferPool().getPageSize();
         byte[] pageData = page.getPageData();
-        os.write(pageData);
-        os.close();
+        //for (byte b: pageData)
+        //    System.out.println(b);
+        fs.seek(offset);
+        fs.write(pageData);
+        fs.close();
     }
 
     /**

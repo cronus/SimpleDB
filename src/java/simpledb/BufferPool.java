@@ -186,15 +186,7 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for lab1|lab2
-        Iterator<Integer> keys = locks.keySet().iterator();
-        while (keys.hasNext()) {
-            int key = keys.next();
-            Lock l = locks.get(key);
-            if (l.getTransactionId().equals(tid)) {
-                l.setLockType(Lock.LockType.NO_LOCK);
-                l.setTransactionId(null);
-            }
-        }
+        transactionComplete(tid, true);
     }
 
     /** Return true if the specified transaction has a lock on the specified page */
@@ -223,10 +215,34 @@ public class BufferPool {
         throws IOException {
         // some code goes here
         // not necessary for lab1|lab2
-        if (commit)
-            transactionComplete(tid);
-        else
-            transactionComplete(tid);
+        Iterator<Integer> keys = locks.keySet().iterator();
+        while (keys.hasNext()) {
+            int key = keys.next();
+            Lock l = locks.get(key);
+            Page p = buffers.get(key);
+            if (commit) {
+                if (p.isDirty() != null && p.isDirty().equals(tid)) {
+                    //System.out.println(p);
+                    //byte[] data = p.getPageData();
+                    //for (byte b: data)
+                    //    System.out.println("transactionComplete:"+b);
+                    flushPage(p.getId());
+                }
+            }
+            else {
+                if (p.isDirty() != null && p.isDirty().equals(tid)) {
+                    discardPage(p.getId());
+                    Catalog ctlg = Database.getCatalog();
+                    DbFile f     = ctlg.getDatabaseFile(p.getId().getTableId());
+                    buffers.put(key, f.readPage(p.getId()));
+                }
+            }
+            // release all the lock related to tid
+            if (l.getTransactionId().equals(tid)) {
+                l.setLockType(Lock.LockType.NO_LOCK);
+                l.setTransactionId(null);
+            }
+        }
     }
 
     /**
@@ -327,8 +343,10 @@ public class BufferPool {
         Catalog ctlg = Database.getCatalog();
         DbFile f     = ctlg.getDatabaseFile(pid.getTableId());
         Page p       =  buffers.get(pid.hashCode());
+        //System.out.println("flushPage:"+pid.getPageNumber());
         TransactionId tid = p.isDirty();
         if (tid != null) {
+            //System.out.println(tid);
             f.writePage(p);
             p.markDirty(false, tid);
         }
@@ -349,24 +367,28 @@ public class BufferPool {
         // some code goes here
         // not necessary for lab1
         //System.out.println("evict page");
-        try {
-            Iterator<Integer> keys = buffers.keySet().iterator();
-            while (keys.hasNext()) {
-               int key = keys.next();
-               Page p  = buffers.get(key);
-               if (p.isDirty() != null) {
-                   //System.out.println("key:"+key);
-                   flushPage(p.getId());
-                   buffers.remove(p.getId().hashCode());
-                   break;
-               }
-               else {
-                   discardPage(p.getId());
-                   break;
-               }
-            }
-        } catch (IOException e) {
+        Iterator<Integer> keys = buffers.keySet().iterator();
+        while (keys.hasNext()) {
+           int key = keys.next();
+           Page p  = buffers.get(key);
+           //if (p.isDirty() != null) {
+           //    //System.out.println("key:"+key);
+           //    flushPage(p.getId());
+           //    buffers.remove(p.getId().hashCode());
+           //    break;
+           //}
+           //else {
+           //    discardPage(p.getId());
+           //    break;
+           //}
+
+           // Implement NO STEAL
+           if (p.isDirty() == null) {
+               discardPage(p.getId());
+               break;
+           }
         }
+        throw new DbException("All pages are dirty in buffer pool!");
     }
 
 }

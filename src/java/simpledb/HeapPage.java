@@ -384,8 +384,10 @@ public class HeapPage implements Page {
         List<Tuple> NonEmpTuples = new ArrayList<Tuple>();
         for (int i = 0; i < tuples.length; i++) {
             //System.out.println(isSlotUsed(i));
-            if (isSlotUsed(i))
+            if (isSlotUsed(i)) {
+                //System.out.println(tuples[i]);
                 NonEmpTuples.add(tuples[i]);
+            }
         }
         return NonEmpTuples.iterator();
     }
