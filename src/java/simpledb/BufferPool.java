@@ -28,6 +28,38 @@ public class BufferPool {
     public static final int DEFAULT_PAGES = 50;
 
     private ConcurrentHashMap<Integer, Page> buffers = null;
+
+    private ConcurrentHashMap<Integer, Lock> locks = null;
+
+    public static class Lock {
+        public enum LockType {NO_LOCK, X, S;}
+
+        LockType l;
+        
+        private TransactionId tid;
+
+        public Lock (TransactionId tid, LockType l) {
+            this.tid = tid;
+            this.l   = l;
+        }
+
+        public void setLockType (LockType l) {
+            this.l = l; 
+        }
+
+        public void setTransactionId (TransactionId tid) {
+            this.tid = tid; 
+        }
+
+        public TransactionId getTransactionId() {
+            return this.tid;
+        }
+
+        public LockType getLockType() {
+            return this.l;
+        }
+    }
+
     /**
      * Creates a BufferPool that caches up to numPages pages.
      *
@@ -36,6 +68,7 @@ public class BufferPool {
     public BufferPool(int numPages) {
         // some code goes here
         buffers = new ConcurrentHashMap<Integer, Page>(numPages);
+        locks   = new ConcurrentHashMap<Integer, Lock>(numPages);
     }
     
     public static int getPageSize() {
@@ -75,7 +108,22 @@ public class BufferPool {
         //if exist, return
         //System.out.println("pg hashcode:"+pid.hashCode());
         //System.out.println("buffer size:"+buffers.size());
+
+        // check lock
         if (buffers.containsKey(pid.hashCode())) {
+
+            if (perm == Permissions.READ_WRITE) {
+                Lock l = locks.get(pid.hashCode()); 
+                while (!(l.getLockType() == Lock.LockType.NO_LOCK || l.getTransactionId().equals(tid)));
+                l.setLockType(Lock.LockType.X);
+                l.setTransactionId(tid);
+            }
+            else if (perm == Permissions.READ_ONLY) {
+                Lock l = locks.get(pid.hashCode()); 
+                while (!(l.getLockType() == Lock.LockType.NO_LOCK || l.getLockType() == Lock.LockType.S || l.getTransactionId() == tid));
+                l.setLockType(Lock.LockType.S);
+                l.setTransactionId(tid);
+            }
             //System.out.println("Read from buffer pool."+pid.hashCode());
             return buffers.get(pid.hashCode());
         }
@@ -90,6 +138,15 @@ public class BufferPool {
                     evictPage();
                 }
 
+                if (perm == Permissions.READ_WRITE) {
+                    Lock l = new Lock(tid, Lock.LockType.X);
+                    locks.put(pid.hashCode(), l);
+                }
+                else if (perm == Permissions.READ_ONLY) {
+                    Lock l = new Lock(tid, Lock.LockType.S);
+                    locks.put(pid.hashCode(), l);
+                }
+
                 buffers.put(pid.hashCode(), p);
                 return p;
             }
@@ -98,7 +155,6 @@ public class BufferPool {
                 return null;
             }
         }
-            
     }
 
     /**
@@ -113,6 +169,13 @@ public class BufferPool {
     public  void releasePage(TransactionId tid, PageId pid) {
         // some code goes here
         // not necessary for lab1|lab2
+        Lock l = locks.get(pid.hashCode());
+        if (l.getTransactionId().equals(tid)) {
+            l.setLockType(Lock.LockType.NO_LOCK);
+        }
+        else {
+            System.out.println("transaction id not match");
+        }
     }
 
     /**
@@ -123,13 +186,30 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for lab1|lab2
+        Iterator<Integer> keys = locks.keySet().iterator();
+        while (keys.hasNext()) {
+            int key = keys.next();
+            Lock l = locks.get(key);
+            if (l.getTransactionId().equals(tid)) {
+                l.setLockType(Lock.LockType.NO_LOCK);
+                l.setTransactionId(null);
+            }
+        }
     }
 
     /** Return true if the specified transaction has a lock on the specified page */
     public boolean holdsLock(TransactionId tid, PageId p) {
         // some code goes here
         // not necessary for lab1|lab2
-        return false;
+        Lock l = locks.get(p);
+        if (l.getLockType() == Lock.LockType.X || l.getLockType() == Lock.LockType.S) {
+            if (l.getTransactionId().equals(tid))
+                return true;
+            else
+                return false;
+        }
+        else
+            return false;
     }
 
     /**
@@ -143,6 +223,10 @@ public class BufferPool {
         throws IOException {
         // some code goes here
         // not necessary for lab1|lab2
+        if (commit)
+            transactionComplete(tid);
+        else
+            transactionComplete(tid);
     }
 
     /**
