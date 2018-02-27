@@ -18,7 +18,7 @@ public class HeapFile implements DbFile {
 
     private File f;
     private TupleDesc td;
-    private ArrayList<Page> dirtypages;
+    //private ArrayList<Page> dirtypages;
     /**
      * Constructs a heap file backed by the specified file.
      * 
@@ -30,7 +30,7 @@ public class HeapFile implements DbFile {
         // some code goes here
         this.f           = f;
         this.td          = td;
-        this.dirtypages  = new ArrayList<Page>();
+        //this.dirtypages  = new ArrayList<Page>();
     }
 
     /**
@@ -144,6 +144,7 @@ public class HeapFile implements DbFile {
         int tableid        = getId();
         BufferPool bp      = Database.getBufferPool();
         boolean insertDone = false;
+        ArrayList<Page> dirtypages = new ArrayList<Page>();
 
         for (int i = 0; i < n; i++) {
             HeapPageId hpId = new HeapPageId(tableid, i);
@@ -175,6 +176,7 @@ public class HeapFile implements DbFile {
         // some code goes here
         //return null;
         // not necessary for lab1
+        ArrayList<Page> dirtypages = new ArrayList<Page>();
         HeapPageId hpId = (HeapPageId) t.getRecordId().getPageId();
         BufferPool bp = Database.getBufferPool();
         HeapPage hp = (HeapPage) bp.getPage(tid, hpId, Permissions.READ_WRITE);
