@@ -134,7 +134,7 @@ public class TableStats {
             }
             dbfit.close();
         } catch (DbException e) {
-            System.out.println("DbException!");
+            e.printStackTrace();
         } catch (TransactionAbortedException e) {
             System.out.println("TransactionAbortedException");
         }

@@ -31,6 +31,8 @@ public class BufferPool {
 
     private ConcurrentHashMap<Integer, Lock> locks = null;
 
+    private int pages;
+
     public static class Lock {
         public enum LockType {NO_LOCK, X, S;}
 
@@ -67,8 +69,9 @@ public class BufferPool {
      */
     public BufferPool(int numPages) {
         // some code goes here
-        buffers = new ConcurrentHashMap<Integer, Page>(numPages);
-        locks   = new ConcurrentHashMap<Integer, Lock>(numPages);
+        this.buffers = new ConcurrentHashMap<Integer, Page>(numPages);
+        this.locks   = new ConcurrentHashMap<Integer, Lock>(numPages);
+        this.pages   = numPages;
     }
     
     public static int getPageSize() {
@@ -152,10 +155,10 @@ public class BufferPool {
             DbFile f     = ctlg.getDatabaseFile(pid.getTableId());
             Page p       = f.readPage(pid);
             if (p != null) {
-                //System.out.println("[debug]Fetch page from disk:"+pid.hashCode());
-                if (buffers.size() == 16) {
+                while (buffers.size() == pages) {
                     evictPage();
                 }
+                //System.out.println("[debug]Fetch page from disk:"+pid.hashCode()+" total pages:"+pages);
 
                 if (perm == Permissions.READ_WRITE) {
                     Lock l = new Lock(tid, Lock.LockType.X);
@@ -234,11 +237,12 @@ public class BufferPool {
         throws IOException {
         // some code goes here
         // not necessary for lab1|lab2
-        Iterator<Integer> keys = locks.keySet().iterator();
+        Iterator<Integer> keys = buffers.keySet().iterator();
         while (keys.hasNext()) {
             int key = keys.next();
             Lock l = locks.get(key);
             Page p = buffers.get(key);
+            //System.out.println("key:"+key+" page:"+p);
             if (commit) {
                 if (p.isDirty() != null && p.isDirty().equals(tid)) {
                     //System.out.println(p);
@@ -350,6 +354,7 @@ public class BufferPool {
     public synchronized void discardPage(PageId pid) {
         // some code goes here
         // not necessary for lab1
+        //System.out.println("remove page:"+pid.hashCode());
         buffers.remove(pid.hashCode());
     }
 
@@ -391,6 +396,7 @@ public class BufferPool {
         while (keys.hasNext()) {
            int key = keys.next();
            Page p  = buffers.get(key);
+           //System.out.println("pid:"+p.getId().hashCode()+" tid:"+p.isDirty());
            //if (p.isDirty() != null) {
            //    //System.out.println("key:"+key);
            //    flushPage(p.getId());
@@ -405,7 +411,7 @@ public class BufferPool {
            // Implement NO STEAL
            if (p.isDirty() == null) {
                discardPage(p.getId());
-               break;
+               return;
            }
         }
         throw new DbException("All pages are dirty in buffer pool!");
