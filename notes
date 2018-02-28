@@ -1,0 +1,186 @@
+1. Java static key word:
+    Static keyword can be used with class, variable, method and block. Static members belong to the class instead of a specific instance, this means if you make a member static, you can access it without object.
+
+2. Static Class
+    A class can be made static only if it is a nested class.
+        1) Nested static class doesn’t need reference of Outer class
+        2) A static class cannot access non-static members of the Outer class
+
+3. @ means annotation in java
+
+4. Serializable interface
+
+5. Array vs ArrayList
+    Array: Simple fixed arrays that we create in Jave, like below
+        int arr[] new int[10]
+    ArrayList: Dynamic sized arrays in Java that implement List interface
+        ArrayList<Type> arrL = new ArrayList<Type>();
+
+   // A Java program to demonstrate differences between array
+   // and ArrayList
+   import java.util.ArrayList;
+   import java.util.Arrays;
+   
+   class Test
+   {
+       public static void main(String args[])
+       {
+           /* ........... Normal Array............. */
+           int[] arr = new int[3];
+           arr[0] = 1;
+           arr[1] = 2;
+           System.out.println(arr[0]);
+   
+           /*............ArrayList..............*/
+           // Create an arrayList with initial capacity 2
+           ArrayList<Integer> arrL = new ArrayList<Integer>(2);
+   
+           // Add elements to ArrayList
+           arrL.add(1);
+           arrL.add(2);
+   
+           // Access elements of ArrayList
+           System.out.println(arrL.get(0));
+       }
+   }
+
+6. Throws vs Throw 
+    1. throws clause is used to declare an exception and throw keyword is used to throw an exception explicitly.
+    2. If we see syntax wise then throw is followed by an instance variable and throws is followed by exception class names.
+    3. The keyword throw is used inside method body to invoke an exception and throws clause is used in method declaration (signature).
+    For example
+
+    throw
+        throw new Exception("You have some exception")
+        throw new IOException("Connection failed!!")
+
+    throws
+        public int myMethod() throws IOException, ArithmeticException, NullPointerException {}
+
+    4. You cannot declare multiple exceptions with throw. You can declare multiple exception e.g. public void method()throws IOException,SQLException.
+    5. checked exceptions can not be propagated with throw only because it is explicitly used to throw an particular exception. checked exception can be propagated with throws.
+
+7. Use the string.equals(Object other) function to compare strings, not the == operator.
+    The function checks the actual contents of the string, the == operator checks whether the references to the objects are equal.
+
+8. UUID: Universally Unique Identifier, represents a 128-bit long value which guarantees uniquencess across time and space
+
+9. ConcurrentHashMap
+    HashMap is the Class which is under Traditional Collection and ConcurrentHashMap is a Class which is under Concurrent Collections, apart from this there are various differences between them which are:
+    
+    HashMap is non-Synchronized in nature i.e. HashMap is not Thread-safe whereas ConcurrentHashMap is Thread-safe in nature.
+    HashMap performance is relatively high because it is non-synchronized in nature and any number of threads can perform simultaneously. But ConcurrentHashMap performance is low sometimes because sometimes Threads are required to wait on ConcurrentHashMap.
+    While one thread is Iterating the HashMap object, if other thread try to add/modify the contents of Object then we will get Run-time exception saying ConcurrentModificationException.Whereas In ConcurrentHashMap we wont get any exception while performing any modification at the time of Iteration.
+    
+10. org.junit Annotation Type Before
+    When writing tests, it is common to find that several tests need similar objects created before they can run. Annotating a public void method with @Before causes that method to be run before the Test method. The @Before methods of superclasses will be run before those of the current class.
+    public class Example {
+       List empty;
+       @Before public void initialize() {
+          empty= new ArrayList();
+       }
+       @Test public void size() {
+          ...
+       }
+       @Test public void remove() {
+          ...
+       }
+    }
+ 
+11. AtomicReference: An object that may be updated atomically
+
+12. SerialVerisonUID
+    The serialization rutime associates with each serializable class a version number, called a serialVersionUID, which is used during deserialization to verify that the sender and the receiver of a serialized object have loaded classes for that object that are compatible with respect to serialization
+
+13. Type List vs type ArrayList in Java
+    Almost always the first one is preferred over the second one. The first has the advantage that the implementation of the List can change (to a LinkedList for example), without affecting the rest of the code. This will be a difficult task to do with an ArrayList, not only because you will need to change ArrayList to LinkedList everywhere, but also because you may have used ArrayList specific methods.
+
+14. Differnce between C and Java returning an Object reference/pointer
+    The difference here isn't in the way the pointer is returned really. The difference is what you are actually returning. Or rather, what type of object you are trying to return. In the first example, you are returning a local variable. If you were actually allocating some memory dynamically, copying your characters into that block of memory, and then returning that - then you would be like what your Java example does; assuming the Java example is actually correct.
+Code:
+    char *getName( void )
+    {
+        char buf[ BUFSIZ ] = { "some name" };
+        char *s = NULL;
+        s = malloc( strlen( buf ) + 1 );
+        strcpy( s, buf );
+        return s;
+    }
+Something like that. Of course you need to free that when you are done.
+
+15. How to return a value from try, catch and finally?
+    To return a value when using try/catch you can use a temporary variable, e.g.
+        double sum = 0.0;
+        try {
+            int length = values.length;
+            double arrayValues[] = new double[length];
+            for(int i = 0; i<length; i++) {
+            arrayValues[i] = Double.parseDouble(values[i]);
+            sum += arrayValues[i];
+        } catch(NumberFormatException e) {
+            e.printStackTrace();
+        } catch(RangeException e) {
+            throw e;
+        } finally {
+            System.out.println("Thank you for using the program!");
+        }
+            return sum;
+        }
+    Else you need to have a return in every execution path (try block or catch block) that has no throw.
+
+16. scope
+    Modifier    Class Package Subclass   World
+    public      Y     Y       Y          Y
+    protected   Y     Y       Y          N
+    no modifier Y     Y       N          N
+    private     Y     N       N          N
+
+17. Java rounding up to an int using Math.ceil? int total = (int) Math.ceil(157/32); Why does it still return 4? 157/32 = 4.90625, I need to round up, I've looked around and this seems to be the right method.
+    You are doing 157/32 which is dividing two integers with each other, which always result in a rounded down integer. Therefore the (int) Math.ceil(...) isn't doing anything.
+
+18. enum
+    An enum type is a special data type that enables for a variable to be a set of predefined constants.
+    An enum is a reference type (just like a class, interface and array), which holds a reference to memory in the heap. It is implicitly final, because the constants should not be changed. It can include other component of a traditional class, such as constructors, member variables and methods. (This is where Java's enum is more powerful than C/C++'s counterpart). Each enum constant can be declared with parameters to be passed to the constructor when it is created.
+
+19 synchronized method
+    only one thread can execute the synchronized code
+    If a thread already holds the lock on a monitor object, it has access to all blocks synchronized on the same monitor object. This is called reentrance.
+
+20. How to write data with FileOutputStream without losing old data?
+    Use the constructor that takes a File and a boolean
+        FileOutputStream(File file, boolean append) 
+    and set the boolean to true. That way, the data you write will be appended to the end of the file, rather than overwriting what was already there.
+
+    Best Way to Write Bytes in the Middle of a File in Java
+    Reading and Writing in the middle of a file is as simple as using a RandomAccessFile in Java.
+
+    RandomAccessFile, despite its name, is more like an InputStream and OutputStream and less like a File. It allows you to read or seek through bytes in a file and then begin writing over whichever bytes you care to stop at.
+
+    Once you discover this class, it is very easy to use if you have a basic understanding of regular file i/o.
+
+    A small example:
+
+        public static void aMethod(){
+            RandomAccessFile f = new RandomAccessFile(new File("whereDidIPutTHatFile"), "rw");
+            long aPositionWhereIWantToGo = 99;
+            f.seek(aPositionWhereIWantToGo); // this basically reads n bytes in the file
+            f.write("Im in teh fil, writn bites".getBytes());
+            f.close();
+        }
+
+21. Class Object (What does classname.class return?)
+    It returns the same what Object.getClass() does for a given instance, but you can use it when you know statically what class you want (i.e. at compile time).
+
+    From the Javadoc:
+        Returns the runtime class of this Object.
+        In short, it gives you an object that represents the class of the (original) object. It's used, amongst other things, by reflection when you want to programatically discover methods and fields in order to invoke/access them.
+
+        For example:
+            Method m[] = String.class.getDeclaredMethods();
+            for (int i = 0; i < m.length; i++)
+            {
+              System.out.println(m[i].toString());
+            }
+
+22. Vector
+    Vector is almost identical to ArrayList, and the difference is that Vector is synchronized. Because of this, it has an overhead than ArrayList.

@@ -5,6 +5,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import java.util.*;
+
 /**
  * TableStats represents statistics (e.g., histograms) about base tables in a
  * query. 
@@ -66,6 +68,11 @@ public class TableStats {
      */
     static final int NUM_HIST_BINS = 100;
 
+    private IntHistogram[] stats;
+    private int ioCostPerPage;
+    private int tupleSize;
+    private HeapFile df;
+
     /**
      * Create a new TableStats object, that keeps track of statistics on each
      * column of a table
@@ -85,6 +92,52 @@ public class TableStats {
         // necessarily have to (for example) do everything
         // in a single scan of the table.
         // some code goes here
+        this.ioCostPerPage   = ioCostPerPage;
+        this.tupleSize       = 0;
+        this.df              = (HeapFile) Database.getCatalog().getDatabaseFile(tableid);
+        TupleDesc td         = Database.getCatalog().getTupleDesc(tableid);
+        int numCol           = td.numFields();
+        stats                = new IntHistogram[numCol];
+        DbFileIterator dbfit = df.iterator(new TransactionId());
+        try {
+            dbfit.open();
+            // first scan, find max and min of each column, construct IntHistogram
+            int[] max = new int[numCol];
+            int[] min = new int[numCol];
+            Arrays.fill(max, Integer.MIN_VALUE);
+            Arrays.fill(min, Integer.MAX_VALUE);
+            while (dbfit.hasNext()) {
+                tupleSize++;
+                Tuple t = dbfit.next();
+                for (int i = 0; i < numCol; i++) {
+                    IntField f  = (IntField) t.getField(i);
+                    if (max[i] < f.getValue())
+                        max[i] = f.getValue();
+                    if (min[i] > f.getValue())
+                        min[i] = f.getValue();
+                }
+            }
+            // Construct IntHistogram arrays
+            for (int i = 0; i < numCol; i++) {
+                //System.out.println("min:"+min[i]+" max:"+max[i]);
+                stats[i] = new IntHistogram(NUM_HIST_BINS, min[i], max[i]);
+            }
+
+            dbfit.rewind();
+            // second scan, add values into IntHistogram
+            while (dbfit.hasNext()) {
+                Tuple t = dbfit.next();
+                for (int i = 0; i < numCol; i++) {
+                    IntField f  = (IntField) t.getField(i);
+                    stats[i].addValue(f.getValue());
+                }
+            }
+            dbfit.close();
+        } catch (DbException e) {
+            e.printStackTrace();
+        } catch (TransactionAbortedException e) {
+            System.out.println("TransactionAbortedException");
+        }
     }
 
     /**
@@ -101,7 +154,8 @@ public class TableStats {
      */
     public double estimateScanCost() {
         // some code goes here
-        return 0;
+        //return 0;
+        return df.numPages() * ioCostPerPage;
     }
 
     /**
@@ -115,7 +169,8 @@ public class TableStats {
      */
     public int estimateTableCardinality(double selectivityFactor) {
         // some code goes here
-        return 0;
+        //return 0;
+        return (int) (tupleSize * selectivityFactor);
     }
 
     /**
@@ -148,7 +203,9 @@ public class TableStats {
      */
     public double estimateSelectivity(int field, Predicate.Op op, Field constant) {
         // some code goes here
-        return 1.0;
+        //return 1.0;
+        IntField f = (IntField) constant;
+        return stats[field].estimateSelectivity(op, f.getValue());
     }
 
     /**
