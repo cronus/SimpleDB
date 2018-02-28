@@ -209,7 +209,7 @@ public class HeapFile implements DbFile {
                 else
                     return null;
                 HeapPageId hpId = new HeapPageId(getId(), pageno);
-                HeapPage hp = (HeapPage) bp.getPage(tid, hpId, Permissions.READ_ONLY);
+                HeapPage hp = (HeapPage) bp.getPage(tid, hpId, Permissions.READ_WRITE);
                 it = hp.iterator();
                 return it.next();
             }
@@ -224,7 +224,7 @@ public class HeapFile implements DbFile {
             bp     = Database.getBufferPool();
             pageno = 0;
             HeapPageId hpId = new HeapPageId(getId(), pageno);
-            HeapPage hp = (HeapPage) bp.getPage(tid, hpId, Permissions.READ_ONLY);
+            HeapPage hp = (HeapPage) bp.getPage(tid, hpId, Permissions.READ_WRITE);
             it = hp.iterator();
         }
         // close the iterator
