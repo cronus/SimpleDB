@@ -143,6 +143,8 @@ Something like that. Of course you need to free that when you are done.
     An enum is a reference type (just like a class, interface and array), which holds a reference to memory in the heap. It is implicitly final, because the constants should not be changed. It can include other component of a traditional class, such as constructors, member variables and methods. (This is where Java's enum is more powerful than C/C++'s counterpart). Each enum constant can be declared with parameters to be passed to the constructor when it is created.
 
 19 synchronized method
+    only one thread can execute the synchronized code
+    If a thread already holds the lock on a monitor object, it has access to all blocks synchronized on the same monitor object. This is called reentrance.
 
 20. How to write data with FileOutputStream without losing old data?
     Use the constructor that takes a File and a boolean

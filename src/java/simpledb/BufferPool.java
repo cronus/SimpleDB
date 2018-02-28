@@ -128,15 +128,10 @@ public class BufferPool {
      * @param pid the ID of the requested page
      * @param perm the requested permissions on the page
      */
-    public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
+    public synchronized Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
         // some code goes here
-        //System.out.println(pid.hashCode());
-        //look up the page in the buffer pool
-        //if exist, return
-        //System.out.println("pg hashcode:"+pid.hashCode());
         //System.out.println("buffer size:"+buffers.size());
-
 
         //There are many possible ways to detect deadlock. 
         //For example, you may implement a simple timeout policy that aborts a transaction if it has not completed after a given period of time. 
@@ -159,27 +154,28 @@ public class BufferPool {
                     Lock l = locks.get(pid.hashCode());
                     if ((l.getLockType() == Lock.LockType.NO_LOCK)) {
 
-                        System.out.println(pid.hashCode()+" READ WRITE; LockType:"+l.getLockType()+" lock X transactionId:"+l.getXLockTransactionId()+" request tid:"+tid);
+                        //System.out.println(pid.hashCode()+" READ WRITE; LockType:"+l.getLockType()+" lock X transactionId:"+l.getXLockTransactionId()+" request tid:"+tid);
                         l.setLockType(Lock.LockType.X);
                         l.setXLockTransactionId(tid);
                     }
                 }
                 else {
                     Lock l = new Lock(tid, Lock.LockType.X);
-                    System.out.println(pid.hashCode()+" fetch READ WRITE; LockType:"+l.getLockType()+" transactionId:"+l.getXLockTransactionId());
+                    //System.out.println(pid.hashCode()+" fetch READ WRITE; LockType:"+l.getLockType()+" transactionId:"+l.getXLockTransactionId());
                     locks.put(pid.hashCode(), l);
                 }
             }
 
             // upgrade lock
             if (locks.get(pid.hashCode()).getLockType() == Lock.LockType.S && locks.get(pid.hashCode()).getSLockTransactionIds().contains(tid)) {
-                discardPage(pid);
+                //discardPage(pid);
                 locks.get(pid.hashCode()).upgrade(tid);
             }
 
         }
         // READ ONLY request
         else if (perm == Permissions.READ_ONLY) {
+            //System.out.println("enter READ_ONLY");
             while (!holdsLock(tid, pid)) {
                 // deadlock detection
                 long lockWait = System.currentTimeMillis() - lockStart;
@@ -192,18 +188,24 @@ public class BufferPool {
                     if (l.getLockType() == Lock.LockType.NO_LOCK) {
                         l.setLockType(Lock.LockType.S);
                         l.addSLockTransactionId(tid);
-                        System.out.println(pid.hashCode()+" READ ONLY; LockType:"+l.getLockType()+" transactionId:"+l.getXLockTransactionId()+" request tid:"+tid);
+                        //System.out.println(pid.hashCode()+" READ ONLY; LockType:"+l.getLockType()+" transactionId:"+l.getXLockTransactionId()+" request tid:"+tid);
+                    }
+                    else if (l.getLockType() == Lock.LockType.S) {
+                        l.addSLockTransactionId(tid);
+                        //System.out.println(pid.hashCode()+" READ ONLY added; LockType:"+l.getLockType()+" transactionId:"+l.getXLockTransactionId()+" request tid:"+tid);
                     }
                 }
                 else {
                     Lock l = new Lock(tid, Lock.LockType.S);
-                    System.out.println(pid.hashCode()+" fetch READ ONLY; LockType:"+l.getLockType()+" transactionId:"+l.getSLockTransactionIds());
+                    //System.out.println(pid.hashCode()+" fetch READ ONLY; LockType:"+l.getLockType()+" transactionId:"+l.getSLockTransactionIds());
                     locks.put(pid.hashCode(), l);
                 }
             }
         }
 
         // pages
+        //look up the page in the buffer pool
+        //if exist, return
         if (buffers.containsKey(pid.hashCode())) {
             //System.out.println("Read from buffer pool:"+pid.hashCode()+" tid:"+tid);
             return buffers.get(pid.hashCode());
@@ -281,12 +283,12 @@ public class BufferPool {
             //System.out.println(l.getXLockTransactionId());
             // X lock
             if (l.getLockType() == Lock.LockType.X && l.getXLockTransactionId().equals(tid)) {
-                System.out.println(tid+" hold X lock");
+                //System.out.println(tid+" hold X lock");
                 return true;
             }
             // S lock
             else if(l.getLockType() == Lock.LockType.S && l.getSLockTransactionIds().contains(tid)) {
-                System.out.println(tid+" hold S lock");
+                //System.out.println(tid+" hold S lock");
                 return true;
             }
             // neither
@@ -308,11 +310,11 @@ public class BufferPool {
         throws IOException {
         // some code goes here
         // not necessary for lab1|lab2
+        // pages
         Iterator<Integer> keys = buffers.keySet().iterator();
         while (keys.hasNext()) {
             int key = keys.next();
-            Lock l = locks.get(key);
-            Page p = buffers.get(key);
+            Page p  = buffers.get(key);
             //System.out.println("key:"+key+" page:"+p);
             if (commit) {
                 if (p.isDirty() != null && p.isDirty().equals(tid)) {
@@ -331,29 +333,36 @@ public class BufferPool {
                     buffers.put(key, f.readPage(p.getId()));
                 }
             }
+        }
+        // locks
+        keys = locks.keySet().iterator();
+        while (keys.hasNext()) {
+            int key = keys.next();
+            Lock l = locks.get(key);
             // release all the lock related to tid
             //System.out.println("Transaction Id:"+l.getTransactionId());
             if (l.getLockType() == Lock.LockType.X && l.getXLockTransactionId().equals(tid)) {
-                System.out.println("release X lock: tid:"+tid);
+                //System.out.println("release X lock: tid:"+tid);
                 l.setLockType(Lock.LockType.NO_LOCK);
                 l.setXLockTransactionId(null);
             }
             else if (l.getLockType() == Lock.LockType.S && l.getSLockTransactionIds().contains(tid)) {
-                System.out.println("release S lock: tid:"+tid);
+                //System.out.println("release S lock: tid:"+tid);
                 l.getSLockTransactionIds().remove(tid);
                 if (l.getSLockTransactionIds().size() == 0) {
-                    System.out.println("release S lock: no shared lock");
+                    //System.out.println("release S lock: no shared lock");
                     l.setLockType(Lock.LockType.NO_LOCK);
                 }
             }
             else {
+                if (commit) {
                 String error=" ";
-                if (l.getLockType() == Lock.LockType.X)
-                    error += "type:"+l.getLockType()+" x tid:"+ l.getXLockTransactionId();
-                if (l.getLockType() == Lock.LockType.S)
-                    error += "type:"+l.getLockType()+" x tid:"+ l.getSLockTransactionIds();
-                System.out.println("lock type not correct! request tid:"+tid+error);
-
+                    if (l.getLockType() == Lock.LockType.X)
+                        error += "type:"+l.getLockType()+" x tid:"+ l.getXLockTransactionId();
+                    if (l.getLockType() == Lock.LockType.S)
+                        error += "type:"+l.getLockType()+" x tid:"+ l.getSLockTransactionIds();
+                    System.out.println("lock type not correct! request tid:"+tid+error);
+                }
             }
         }
     }
