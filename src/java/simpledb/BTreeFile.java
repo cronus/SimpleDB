@@ -196,38 +196,51 @@ public class BTreeFile implements DbFile {
 					throws DbException, TransactionAbortedException {
 		// some code goes here
         //return null;
-        InfField searchF = (IntField) f;
-        BTreeInternalPage btp = (BTreeInternalPage) getPage(tid, dirtypages, pid, Permissions.READ_ONLY);
-        Iterator<BTreeEntry> btEntryIt = btp.iterator();
-        IntField leftEntry  = null;
-        IntField rightEntry = null;
-        while (btEntryIt.hasNext()) {
-            BTreeEntry btEntry = btEntryIt.next();
-            IntField entryF = (IntField) btEntry.getKey();
-            System.out.println(entryF.getValue());
-            if (entryF.compare(Predicate.LESS_OR_EQ, searchF)) {
-                if (leftFiled == null) {
-                    leftField = entryF;
-                }
-                else if (entryF.compare(Predicate.GREATER_OR_EQ, leftField){
-                    leftField = entryF; 
-                }
-            }
-            else if (entryF.compare(Predicate.GREATER_OR_EQ, searchF)) {
-                if (rightField == null) {
-                    rightField = entryF;
-                }
-                else if (entryF.compare(Predicate.LESS_THAN_OR_EQ, rightField) { 
-                    rightField = entryF;
-                }
-            }
-        }
+        IntField searchField           = (IntField) f;
 
-        if (leftEntry == null) {
+        // INTERNAL and ROOT
+        if (pid.pgcateg() == 1 || pid.pgcateg() == 0) {
+            BTreeInternalPage btp          = (BTreeInternalPage) getPage(tid, dirtypages, pid, Permissions.READ_ONLY);
+            Iterator<BTreeEntry> btEntryIt = btp.iterator();
+            BTreeEntry leftEntry  = null;
+            BTreeEntry rightEntry = null;
+            while (btEntryIt.hasNext()) {
+                BTreeEntry btEntry = btEntryIt.next();
+                IntField entryField = (IntField) btEntry.getKey();
+                System.out.println(entryField.getValue());
+                if (entryField.compare(Predicate.Op.LESS_THAN_OR_EQ, searchField)) {
+                    if (leftEntry == null) {
+                        leftEntry = btEntry;
+                    }
+                    else if (entryField.compare(Predicate.Op.GREATER_THAN_OR_EQ, leftEntry.getKey())) {
+                        leftEntry = btEntry; 
+                    }
+                }
+                else if (entryField.compare(Predicate.Op.GREATER_THAN_OR_EQ, searchField)) {
+                    if (rightEntry == null) {
+                        rightEntry = btEntry;
+                    }
+                    else if (entryField.compare(Predicate.Op.LESS_THAN_OR_EQ, rightEntry.getKey())) { 
+                        rightEntry = btEntry;
+                    }
+                }
+            }
+
+            if (leftEntry == null) {
+                return findLeafPage(tid, dirtypages, rightEntry.getLeftChild(), perm, f);
+            }
+            else if (rightEntry == null) {
+                return findLeafPage(tid, dirtypages, leftEntry.getRightChild(), perm, f);
+            }
+            else {
+                System.out.println(leftEntry.getRightChild()+":"+rightEntry.getLeftChild());
+                return findLeafPage(tid, dirtypages, leftEntry.getRightChild(), perm, f);
+            }
         }
-        else if (rightEntry == null) {
-        }
-        else {
+        // LEAF node
+        else if (pid.pgcateg() == 2) {
+            BTreeLeafPage btp = (BTreeLeafPage) getPage(tid, dirtypages, pid, perm);
+            return btp;
         }
         return null;
 	}
