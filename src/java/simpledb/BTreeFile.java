@@ -195,6 +195,40 @@ public class BTreeFile implements DbFile {
 			Field f) 
 					throws DbException, TransactionAbortedException {
 		// some code goes here
+        //return null;
+        InfField searchF = (IntField) f;
+        BTreeInternalPage btp = (BTreeInternalPage) getPage(tid, dirtypages, pid, Permissions.READ_ONLY);
+        Iterator<BTreeEntry> btEntryIt = btp.iterator();
+        IntField leftEntry  = null;
+        IntField rightEntry = null;
+        while (btEntryIt.hasNext()) {
+            BTreeEntry btEntry = btEntryIt.next();
+            IntField entryF = (IntField) btEntry.getKey();
+            System.out.println(entryF.getValue());
+            if (entryF.compare(Predicate.LESS_OR_EQ, searchF)) {
+                if (leftFiled == null) {
+                    leftField = entryF;
+                }
+                else if (entryF.compare(Predicate.GREATER_OR_EQ, leftField){
+                    leftField = entryF; 
+                }
+            }
+            else if (entryF.compare(Predicate.GREATER_OR_EQ, searchF)) {
+                if (rightField == null) {
+                    rightField = entryF;
+                }
+                else if (entryF.compare(Predicate.LESS_THAN_OR_EQ, rightField) { 
+                    rightField = entryF;
+                }
+            }
+        }
+
+        if (leftEntry == null) {
+        }
+        else if (rightEntry == null) {
+        }
+        else {
+        }
         return null;
 	}
 	
