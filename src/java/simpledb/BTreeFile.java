@@ -198,7 +198,8 @@ public class BTreeFile implements DbFile {
         //return null;
         IntField searchField           = (IntField) f;
 
-        // INTERNAL and ROOT
+        // only internal and leaf pages can be passed to this function
+        // INTERNAL
         if (pid.pgcateg() == 1 || pid.pgcateg() == 0) {
             BTreeInternalPage btp          = (BTreeInternalPage) getPage(tid, dirtypages, pid, Permissions.READ_ONLY);
             Iterator<BTreeEntry> btEntryIt = btp.iterator();
@@ -207,8 +208,16 @@ public class BTreeFile implements DbFile {
             while (btEntryIt.hasNext()) {
                 BTreeEntry btEntry = btEntryIt.next();
                 IntField entryField = (IntField) btEntry.getKey();
-                System.out.println(entryField.getValue());
-                if (entryField.compare(Predicate.Op.LESS_THAN_OR_EQ, searchField)) {
+                //System.out.println(entryField);
+                if (searchField == null) {
+                    if (rightEntry == null) {
+                        rightEntry = btEntry;
+                    }
+                    else if (entryField.compare(Predicate.Op.LESS_THAN_OR_EQ, rightEntry.getKey())) { 
+                        rightEntry = btEntry;
+                    }
+                }
+                else if (entryField.compare(Predicate.Op.LESS_THAN_OR_EQ, searchField)) {
                     if (leftEntry == null) {
                         leftEntry = btEntry;
                     }
@@ -233,16 +242,15 @@ public class BTreeFile implements DbFile {
                 return findLeafPage(tid, dirtypages, leftEntry.getRightChild(), perm, f);
             }
             else {
-                System.out.println(leftEntry.getRightChild()+":"+rightEntry.getLeftChild());
+                //System.out.println(leftEntry.getRightChild()+" should be the same as "+rightEntry.getLeftChild());
                 return findLeafPage(tid, dirtypages, leftEntry.getRightChild(), perm, f);
             }
         }
         // LEAF node
-        else if (pid.pgcateg() == 2) {
+        else {
             BTreeLeafPage btp = (BTreeLeafPage) getPage(tid, dirtypages, pid, perm);
             return btp;
         }
-        return null;
 	}
 	
 	/**
