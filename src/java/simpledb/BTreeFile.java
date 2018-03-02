@@ -302,7 +302,51 @@ public class BTreeFile implements DbFile {
 		// the new entry.  getParentWithEmtpySlots() will be useful here.  Don't forget to update
 		// the sibling pointers of all the affected leaf pages.  Return the page into which a 
 		// tuple with the given key field should be inserted.
-        return null;
+        //return null;
+
+        Iterator<Tuple> leafPageIt = page.reverseIterator();
+        int tupleNum = page.getMaxTuples();
+        Tuple middleTuple = null;
+        byte[] data = null;
+
+        // reverse iterator to get half of data
+        while (leafPageIt.hasNext()) {
+            middleTuple = leafPageIt.next();
+            //System.out.println(middleTuple);
+            page.deleteTuple(middleTuple);
+            if (page.getNumEmptySlots() > tupleNum / 2)
+                break;
+        }
+        
+        Field middleKey = middleTuple.getField(page.keyField);
+        
+        // copy the middle key up into the parent page, 
+        // recursively split the parent as needed to accomodate the new entry
+        BTreeInternalPage parent = getParentWithEmptySlots(tid, dirtypages, page.getParentId(), middleKey);
+
+        // create a second page
+		int emptyPageNo = getEmptyPageNo(tid, dirtypages);
+        BTreePageId secondBTreeLeafPageId = new BTreePageId(tableid, emptyPageNo, BTreePageId.LEAF);
+        BTreeLeafPage secondBTreeLeafPage = new BTreeLeafPage(secondBTreeLeafPageId, data, page.keyField);
+        dirtypages.put(secondBTreeLeafPageId, secondBTreeLeafPage);
+
+        // update the sibling pointers of all the affected leaf pages
+        BTreePageId rightSiblingId = page.getRightSiblingId();
+        BTreeLeafPage rightSibling = (BTreeLeafPage) getPage(tid, dirtypages, rightSiblingId, Permissions.READ_WRITE);
+        // new page
+        secondBTreeLeafPage.setLeftSiblingId(page.getId());
+        secondBTreeLeafPage.setRightSiblingId(rightSibling.getId());
+        // old page
+        page.setRightSiblingId(secondBTreeLeafPageId);
+        // right sibling of old page
+        rightSibling.setLeftSiblingId(secondBTreeLeafPageId);
+        
+
+        // return the page into which a tuple with the given key field should be inserted
+        if (field.compare(Predicate.Op.GREATER_THAN_OR_EQ, middleKey))
+            return page;
+        else
+            return secondBTreeLeafPage;
 		
 	}
 	
