@@ -46,6 +46,7 @@ public class BufferPool {
             this.l      = l;
             this.sltids = new ArrayList<TransactionId>();
             if (l == LockType.S) {
+                //System.out.println("[class Lock] constructor S lock");
                 sltids.add(tid);
                 this.xltid = null;
             }
@@ -79,9 +80,13 @@ public class BufferPool {
         }
 
         public void upgrade(TransactionId tid) {
+            //System.out.println("upgrade S lock to X lock");
             if (!sltids.contains(tid))
                 System.out.println("Error: tid not in share lock list!");
 
+            if (l != LockType.S)
+                System.out.println("Error: not S lock! not able to upgrade!");
+            l = LockType.X;
             this.xltid = tid;
             sltids.clear();
         }
@@ -198,6 +203,7 @@ public class BufferPool {
                 else {
                     Lock l = new Lock(tid, Lock.LockType.S);
                     //System.out.println(pid.hashCode()+" fetch READ ONLY; LockType:"+l.getLockType()+" transactionId:"+l.getSLockTransactionIds());
+                    //System.out.println(l);
                     locks.put(pid.hashCode(), l);
                 }
             }
@@ -249,6 +255,7 @@ public class BufferPool {
             l.setXLockTransactionId(null);
         }
         else if (l.getLockType() == Lock.LockType.S && l.getSLockTransactionIds().contains(tid)) {
+            System.out.println("release lock in releasePage");
             l.getSLockTransactionIds().remove(tid);
             if (l.getSLockTransactionIds().size() == 0) {
                 l.setLockType(Lock.LockType.NO_LOCK);
@@ -358,10 +365,17 @@ public class BufferPool {
                 if (commit) {
                 String error=" ";
                     if (l.getLockType() == Lock.LockType.X)
-                        error += "type:"+l.getLockType()+" x tid:"+ l.getXLockTransactionId();
+                        error += "type:"+l.getLockType()+" X tid:"+ l.getXLockTransactionId();
                     if (l.getLockType() == Lock.LockType.S)
-                        error += "type:"+l.getLockType()+" x tid:"+ l.getSLockTransactionIds();
-                    //System.out.println("lock type not correct! request tid:"+tid+error);
+                        error += "type:"+l.getLockType()+" S tid:"+ l.getSLockTransactionIds();
+                    System.out.println("lock type not correct! lock:"+l+" request tid:"+tid+error);
+                    //System.out.println("Printing stack trace:");
+                    //StackTraceElement[] elements = Thread.currentThread().getStackTrace();
+                    //for (int i = 1; i < elements.length; i++) {
+                    //    StackTraceElement s = elements[i];
+                    //    System.out.println("\tat " + s.getClassName() + "." + s.getMethodName()
+                    //    + "(" + s.getFileName() + ":" + s.getLineNumber() + ")");
+                    //}
                 }
             }
         }

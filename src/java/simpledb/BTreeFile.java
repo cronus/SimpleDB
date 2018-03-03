@@ -208,7 +208,7 @@ public class BTreeFile implements DbFile {
             while (btEntryIt.hasNext()) {
                 BTreeEntry btEntry = btEntryIt.next();
                 IntField entryField = (IntField) btEntry.getKey();
-                //System.out.println(entryField);
+                //System.out.println("[findLeafPage]:"+entryField);
                 if (searchField == null) {
                     if (rightEntry == null) {
                         rightEntry = btEntry;
@@ -225,7 +225,7 @@ public class BTreeFile implements DbFile {
                         leftEntry = btEntry; 
                     }
                 }
-                else if (entryField.compare(Predicate.Op.GREATER_THAN_OR_EQ, searchField)) {
+                else if (entryField.compare(Predicate.Op.GREATER_THAN, searchField)) {
                     if (rightEntry == null) {
                         rightEntry = btEntry;
                     }
@@ -235,6 +235,7 @@ public class BTreeFile implements DbFile {
                 }
             }
 
+            //System.out.println("inserted field:"+searchField+" " + leftEntry+" : "+rightEntry);
             if (leftEntry == null) {
                 return findLeafPage(tid, dirtypages, rightEntry.getLeftChild(), perm, f);
             }
@@ -249,6 +250,7 @@ public class BTreeFile implements DbFile {
         // LEAF node
         else {
             BTreeLeafPage btp = (BTreeLeafPage) getPage(tid, dirtypages, pid, perm);
+            //System.out.println("[findLeafPage]pid:"+pid+" num of tuples:"+btp.getNumTuples());
             return btp;
         }
 	}
@@ -311,7 +313,7 @@ public class BTreeFile implements DbFile {
         // create a second page
 		int emptyPageNo                   = getEmptyPageNo(tid, dirtypages);
         BTreePageId secondBTreeLeafPageId = new BTreePageId(tableid, emptyPageNo, BTreePageId.LEAF);
-        BTreeLeafPage secondBTreeLeafPage = new BTreeLeafPage(secondBTreeLeafPageId, BTreeLeafPage.createEmptyPageData(), page.keyField);
+        BTreeLeafPage secondBTreeLeafPage = (BTreeLeafPage) getPage(tid, dirtypages, secondBTreeLeafPageId, Permissions.READ_WRITE);
 
 
         // update the sibling pointers of all the affected leaf pages
@@ -324,8 +326,6 @@ public class BTreeFile implements DbFile {
             // right sibling of old page
             BTreeLeafPage rightSibling = (BTreeLeafPage) getPage(tid, dirtypages, rightSiblingId, Permissions.READ_WRITE);
             rightSibling.setLeftSiblingId(secondBTreeLeafPageId);
-            // update dirtypages
-            dirtypages.put(rightSiblingId, rightSibling);
         }
 
         // the second page
@@ -356,11 +356,6 @@ public class BTreeFile implements DbFile {
         // set parent
         secondBTreeLeafPage.setParentId(parent.getId());
         page.setParentId(parent.getId());
-
-        // update dirtypages
-        dirtypages.put(secondBTreeLeafPageId, secondBTreeLeafPage);
-        dirtypages.put(page.getId(), page);
-        dirtypages.put(parent.getId(), parent);
 
         // return the page into which a tuple with the given key field should be inserted
         if (field.compare(Predicate.Op.GREATER_THAN_OR_EQ, middleKey))
@@ -413,7 +408,7 @@ public class BTreeFile implements DbFile {
         // create a second page
 		int emptyPageNo                           = getEmptyPageNo(tid, dirtypages);
         BTreePageId secondBTreeInternalPageId     = new BTreePageId(tableid, emptyPageNo, BTreePageId.INTERNAL);
-        BTreeInternalPage secondBTreeInternalPage = new BTreeInternalPage(secondBTreeInternalPageId, BTreeInternalPage.createEmptyPageData(), page.keyField);
+        BTreeInternalPage secondBTreeInternalPage = (BTreeInternalPage) getPage(tid, dirtypages, secondBTreeInternalPageId, Permissions.READ_WRITE);
 
         // reverse iterator to move half of entries to the new page
         while (internalPageIt.hasNext()) {
@@ -441,11 +436,6 @@ public class BTreeFile implements DbFile {
         // set parent
         secondBTreeInternalPage.setParentId(parent.getId());
         page.setParentId(parent.getId());
-
-        // update dirtypages
-        dirtypages.put(secondBTreeInternalPageId, secondBTreeInternalPage);
-        dirtypages.put(page.getId(), page);
-        dirtypages.put(parent.getId(), parent);
 
         // return the page into which a entry with the given key field should be inserted
         if (field.compare(Predicate.Op.GREATER_THAN_OR_EQ, middleKey)) {
@@ -582,6 +572,7 @@ public class BTreeFile implements DbFile {
 	Page getPage(TransactionId tid, HashMap<PageId, Page> dirtypages, BTreePageId pid, Permissions perm)
 			throws DbException, TransactionAbortedException {
 		if(dirtypages.containsKey(pid)) {
+            //System.out.println("read from dirty pages:"+pid);
 			return dirtypages.get(pid);
 		}
 		else {
@@ -626,6 +617,7 @@ public class BTreeFile implements DbFile {
 
 		// insert the tuple into the leaf page
 		leafPage.insertTuple(t);
+        //System.out.println(leafPage.getNumTuples()+" : "+leafPage.getId());
 
 		ArrayList<Page> dirtyPagesArr = new ArrayList<Page>();
 		dirtyPagesArr.addAll(dirtypages.values());
