@@ -324,6 +324,8 @@ public class BTreeFile implements DbFile {
             // right sibling of old page
             BTreeLeafPage rightSibling = (BTreeLeafPage) getPage(tid, dirtypages, rightSiblingId, Permissions.READ_WRITE);
             rightSibling.setLeftSiblingId(secondBTreeLeafPageId);
+            // update dirtypages
+            dirtypages.put(rightSiblingId, rightSibling);
         }
 
         // the second page
@@ -333,7 +335,6 @@ public class BTreeFile implements DbFile {
         // old page
         page.setRightSiblingId(secondBTreeLeafPageId);
 
-        dirtypages.put(secondBTreeLeafPageId, secondBTreeLeafPage);
 
         // reverse iterator to get half of data
         while (leafPageIt.hasNext()) {
@@ -354,6 +355,11 @@ public class BTreeFile implements DbFile {
         // set parent
         secondBTreeLeafPage.setParentId(parent.getId());
         page.setParentId(parent.getId());
+
+        // update dirtypages
+        dirtypages.put(secondBTreeLeafPageId, secondBTreeLeafPage);
+        dirtypages.put(page.getId(), page);
+        dirtypages.put(parent.getId(), parent);
 
         // return the page into which a tuple with the given key field should be inserted
         if (field.compare(Predicate.Op.GREATER_THAN_OR_EQ, middleKey))
@@ -407,8 +413,7 @@ public class BTreeFile implements DbFile {
 		int emptyPageNo = getEmptyPageNo(tid, dirtypages);
         BTreePageId secondBTreeInternalPageId = new BTreePageId(tableid, emptyPageNo, BTreePageId.INTERNAL);
         BTreeInternalPage secondBTreeInternalPage = new BTreeInternalPage(secondBTreeInternalPageId, BTreeInternalPage.createEmptyPageData(), page.keyField);
-
-        dirtypages.put(secondBTreeInternalPageId, secondBTreeInternalPage);
+        
 
         // reverse iterator to move half of entries to the new page
         while (internalPageIt.hasNext()) {
@@ -416,17 +421,17 @@ public class BTreeFile implements DbFile {
             //System.out.println(entry);
             page.deleteKeyAndRightChild(entry);
             secondBTreeInternalPage.insertEntry(entry);
-            if (page.getNumEmptySlots() >= entryNum / 2)
+            if (page.getNumEmptySlots() + 1 >= entryNum / 2)
                 break;
         }
         updateParentPointers(tid, dirtypages, secondBTreeInternalPage);
 
-        // middle key push up
+        // find middle key
         BTreeEntry middleEntry = internalPageIt.next();
         Field middleKey        = middleEntry.getKey();
         page.deleteKeyAndRightChild(middleEntry);
         
-        // copy the middle key up into the parent page, 
+        // push the middle key up into the parent page, 
         // recursively split the parent as needed to accomodate the new entry
         BTreeInternalPage parent = getParentWithEmptySlots(tid, dirtypages, page.getParentId(), middleKey);
         parent.insertEntry(middleEntry);
@@ -434,6 +439,11 @@ public class BTreeFile implements DbFile {
         // set parent
         secondBTreeInternalPage.setParentId(parent.getId());
         page.setParentId(parent.getId());
+
+        // update dirtypages
+        dirtypages.put(secondBTreeInternalPageId, secondBTreeInternalPage);
+        dirtypages.put(page.getId(), page);
+        dirtypages.put(parent.getId(), parent);
 
         // return the page into which a tuple with the given key field should be inserted
         if (field.compare(Predicate.Op.GREATER_THAN_OR_EQ, middleKey))

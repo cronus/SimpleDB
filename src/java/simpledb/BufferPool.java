@@ -361,7 +361,7 @@ public class BufferPool {
                         error += "type:"+l.getLockType()+" x tid:"+ l.getXLockTransactionId();
                     if (l.getLockType() == Lock.LockType.S)
                         error += "type:"+l.getLockType()+" x tid:"+ l.getSLockTransactionIds();
-                    System.out.println("lock type not correct! request tid:"+tid+error);
+                    //System.out.println("lock type not correct! request tid:"+tid+error);
                 }
             }
         }
