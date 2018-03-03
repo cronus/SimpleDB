@@ -353,6 +353,7 @@ public class BTreeFile implements DbFile {
 
         // set parent
         secondBTreeLeafPage.setParentId(parent.getId());
+        page.setParentId(parent.getId());
 
         // return the page into which a tuple with the given key field should be inserted
         if (field.compare(Predicate.Op.GREATER_THAN_OR_EQ, middleKey))
@@ -400,7 +401,7 @@ public class BTreeFile implements DbFile {
 
         Iterator<BTreeEntry> internalPageIt = page.reverseIterator();
         int entryNum = page.getMaxEntries();
-        BTreeEntry middleEntry = null;
+        BTreeEntry entry = null;
 
         // create a second page
 		int emptyPageNo = getEmptyPageNo(tid, dirtypages);
@@ -409,24 +410,30 @@ public class BTreeFile implements DbFile {
 
         dirtypages.put(secondBTreeInternalPageId, secondBTreeInternalPage);
 
-        // reverse iterator to get half of data
+        // reverse iterator to move half of entries to the new page
         while (internalPageIt.hasNext()) {
-            middleEntry = internalPageIt.next();
-            //System.out.println(middleEntry);
-            page.deleteEntry(middleEntry);
-            secondBTreeInternalPage.insertEntry(middleEntry);
+            entry = internalPageIt.next();
+            //System.out.println(entry);
+            page.deleteKeyAndRightChild(entry);
+            secondBTreeInternalPage.insertEntry(entry);
             if (page.getNumEmptySlots() >= entryNum / 2)
                 break;
         }
+        updateParentPointers(tid, dirtypages, secondBTreeInternalPage);
 
-        Field middleKey = middleEntry.getKey();
+        // middle key push up
+        BTreeEntry middleEntry = internalPageIt.next();
+        Field middleKey        = middleEntry.getKey();
+        page.deleteKeyAndRightChild(middleEntry);
         
         // copy the middle key up into the parent page, 
         // recursively split the parent as needed to accomodate the new entry
         BTreeInternalPage parent = getParentWithEmptySlots(tid, dirtypages, page.getParentId(), middleKey);
+        parent.insertEntry(middleEntry);
 
         // set parent
         secondBTreeInternalPage.setParentId(parent.getId());
+        page.setParentId(parent.getId());
 
         // return the page into which a tuple with the given key field should be inserted
         if (field.compare(Predicate.Op.GREATER_THAN_OR_EQ, middleKey))
