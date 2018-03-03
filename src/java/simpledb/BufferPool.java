@@ -387,8 +387,8 @@ public class BufferPool {
         // some code goes here
         // not necessary for lab1
         Catalog ctlg = Database.getCatalog();
-        HeapFile hf  = (HeapFile) ctlg.getDatabaseFile(tableId);
-        ArrayList<Page> dirtyPages = hf.insertTuple(tid, t);
+        DbFile f  = ctlg.getDatabaseFile(tableId);
+        ArrayList<Page> dirtyPages = f.insertTuple(tid, t);
         for (Page dirtyPage : dirtyPages) {
             dirtyPage.markDirty(true, tid);
             buffers.put(dirtyPage.getId().hashCode(), dirtyPage);
@@ -414,8 +414,8 @@ public class BufferPool {
         // not necessary for lab1
         int tableId  = t.getRecordId().getPageId().getTableId();
         Catalog ctlg = Database.getCatalog();
-        HeapFile hf  = (HeapFile) ctlg.getDatabaseFile(tableId);
-        ArrayList<Page> dirtyPages = hf.deleteTuple(tid, t);
+        DbFile f  = ctlg.getDatabaseFile(tableId);
+        ArrayList<Page> dirtyPages = f.deleteTuple(tid, t);
         for (Page dirtyPage : dirtyPages) {
             dirtyPage.markDirty(true, tid);
             buffers.put(dirtyPage.getId().hashCode(), dirtyPage);
