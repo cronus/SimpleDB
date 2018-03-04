@@ -205,23 +205,30 @@ public class BTreeFile implements DbFile {
             Iterator<BTreeEntry> btEntryIt = btp.iterator();
             BTreeEntry leftEntry  = null;
             BTreeEntry rightEntry = null;
+            boolean firstEq       = false;
             while (btEntryIt.hasNext()) {
                 BTreeEntry btEntry = btEntryIt.next();
                 IntField entryField = (IntField) btEntry.getKey();
-                //System.out.println("[findLeafPage]:"+entryField);
+                //System.out.println("[findLeafPage]:"+btEntry);
                 if (searchField == null) {
-                    if (rightEntry == null) {
-                        rightEntry = btEntry;
-                    }
-                    else if (entryField.compare(Predicate.Op.LESS_THAN_OR_EQ, rightEntry.getKey())) { 
-                        rightEntry = btEntry;
-                    }
+                    rightEntry = btEntry;
+                    break;
                 }
-                else if (entryField.compare(Predicate.Op.LESS_THAN_OR_EQ, searchField)) {
+                else if (entryField.compare(Predicate.Op.LESS_THAN, searchField)) {
                     if (leftEntry == null) {
                         leftEntry = btEntry;
                     }
                     else if (entryField.compare(Predicate.Op.GREATER_THAN_OR_EQ, leftEntry.getKey())) {
+                        leftEntry = btEntry; 
+                        //System.out.println(btEntry);
+                    }
+                }
+                else if (entryField.compare(Predicate.Op.EQUALS, searchField)) {
+                    if (leftEntry == null) {
+                        leftEntry = btEntry;
+                    }
+                    else if (entryField.compare(Predicate.Op.EQUALS, leftEntry.getKey()) && !firstEq) {
+                        firstEq   = true;
                         leftEntry = btEntry; 
                     }
                 }
@@ -241,6 +248,9 @@ public class BTreeFile implements DbFile {
             }
             else if (rightEntry == null) {
                 return findLeafPage(tid, dirtypages, leftEntry.getRightChild(), perm, f);
+            }
+            else if (leftEntry.getKey().compare(Predicate.Op.EQUALS, searchField)) {
+                return findLeafPage(tid, dirtypages, leftEntry.getLeftChild(), perm, f);
             }
             else {
                 //System.out.println(leftEntry.getRightChild()+" should be the same as "+rightEntry.getLeftChild());
@@ -358,7 +368,7 @@ public class BTreeFile implements DbFile {
         page.setParentId(parent.getId());
 
         // return the page into which a tuple with the given key field should be inserted
-        if (field.compare(Predicate.Op.GREATER_THAN_OR_EQ, middleKey))
+        if (field.compare(Predicate.Op.GREATER_THAN, middleKey))
             return secondBTreeLeafPage;
         else
             return page;
@@ -617,7 +627,7 @@ public class BTreeFile implements DbFile {
 
 		// insert the tuple into the leaf page
 		leafPage.insertTuple(t);
-        //System.out.println(leafPage.getNumTuples()+" : "+leafPage.getId());
+        //System.out.println("tuple:"+t+" "+leafPage.getNumTuples()+" : "+leafPage.getId());
 
 		ArrayList<Page> dirtyPagesArr = new ArrayList<Page>();
 		dirtyPagesArr.addAll(dirtypages.values());
