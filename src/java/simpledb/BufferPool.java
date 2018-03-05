@@ -336,6 +336,12 @@ public class BufferPool {
                     //byte[] data = p.getPageData();
                     //for (byte b: data)
                     //    System.out.println("transactionComplete:"+b);
+
+                    // add based on instructions of lab6 part 1
+                    // use current page contents as the before-image
+                    // for the next transaction that modifies this page.
+                    p.setBeforeImage();
+
                     flushPage(p.getId());
                 }
             }
@@ -491,6 +497,13 @@ public class BufferPool {
         TransactionId tid = p.isDirty();
         if (tid != null) {
             //System.out.println(tid);
+
+            // add based on instructions of lab6 part 1
+            // append an update record to the log, with 
+            // a before-image and after-image.
+            Database.getLogFile().logWrite(tid, p.getBeforeImage(), p);
+            Database.getLogFile().force();
+
             f.writePage(p);
             p.markDirty(false, tid);
         }
