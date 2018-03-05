@@ -893,7 +893,7 @@ public class BTreeFile implements DbFile {
         parentEntry.setKey(middleKey);
         parent.updateEntry(parentEntry);
         
-		BTreeChecker.checkRep(this, tid, new HashMap<PageId, Page>(), true);
+		//BTreeChecker.checkRep(this, tid, new HashMap<PageId, Page>(), true);
 	}
 	
 	/**
@@ -1012,7 +1012,7 @@ public class BTreeFile implements DbFile {
         // delete the entry in the parent corresponding to the two pages that are merging
         deleteParentEntry(tid, dirtypages, leftPage, parent, parentEntry);
 
-		BTreeChecker.checkRep(this, tid, new HashMap<PageId, Page>(), true);
+		//BTreeChecker.checkRep(this, tid, new HashMap<PageId, Page>(), true);
 	}
 
 	/**
