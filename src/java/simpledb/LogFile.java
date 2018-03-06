@@ -459,6 +459,15 @@ public class LogFile {
         transactions that have already committed (though this may not
         be enforced by this method.)
 
+        Implementation:
+            1. Should read the log file, find all update records associated with the aborting transaction, 
+            2. Extract the before-image from each, and write the before-image to the table file. 
+            3. Use raf.seek() to move around in the log file, and raf.readInt() etc. to examine it. 
+            4. Use readPageData() to read each of the before- and after-images. 
+            5. You can use the map tidToFirstLogRecord (which maps from a transaction id to an offset in the heap file) 
+               to determine where to start reading the log file for a particular transaction. 
+            6. You will need to make sure that you discard any page from the buffer pool whose before-image you write back to the table file.
+
         @param tid The transaction to rollback
     */
     public void rollback(TransactionId tid)
@@ -467,6 +476,64 @@ public class LogFile {
             synchronized(this) {
                 preAppend();
                 // some code goes here
+                //System.out.println(tid);
+
+                int  recordType;
+                long transactionIdNum;
+                long offset;
+
+                long beginOffset = tidToFirstLogRecord.get(tid.getId());
+                //System.out.println(beginOffset);
+                raf.seek(beginOffset);
+
+                offset = beginOffset;
+
+                while (offset != currentOffset) {
+                    recordType = raf.readInt();
+                    transactionIdNum = raf.readLong();
+
+                    if (recordType == ABORT_RECORD) {
+                        //System.out.println("tid:"+transactionIdNum+":ABORT_RECORD");
+                        raf.readLong();
+                        offset = raf.getFilePointer();
+                    }
+                    else if (recordType == COMMIT_RECORD) {
+                        //System.out.println("tid:"+transactionIdNum+":COMMIT_RECORD");
+                        raf.readLong();
+                        offset = raf.getFilePointer();
+                    }
+                    else if (recordType == UPDATE_RECORD) {
+                        //System.out.println("tid:"+transactionIdNum+":UPDATE_RECORD");
+                        Page beforePage = readPageData(raf);
+                        Page afterPage  = readPageData(raf);
+                        if (transactionIdNum == tid.getId()) {
+                            Database.getBufferPool().discardPage(afterPage.getId());
+                            Database.getBufferPool().buffers.put(beforePage.getId().hashCode(), beforePage);
+                        }
+                        raf.readLong();
+                        offset = raf.getFilePointer();
+                    }
+                    else if (recordType == BEGIN_RECORD) {
+                        //System.out.println("tid:"+transactionIdNum+":BEGIN_RECORD");
+                        raf.readLong();
+                        offset = raf.getFilePointer();
+                    }
+                    else if (recordType == CHECKPOINT_RECORD) {
+                        //System.out.println("tid:"+transactionIdNum+":CHECKPOINT_RECORD");
+                        int size = raf.readInt();
+                        for (int i = 0; i < size; i++) {
+                            // transaction id number
+                            raf.readLong();
+                            // first record offset
+                            raf.readLong();
+                        }
+                        raf.readLong();
+                        offset = raf.getFilePointer();
+                    }
+                    else {
+                        System.out.println("[rollback] Not expected log record:"+recordType);
+                    }
+                }
             }
         }
     }
@@ -488,12 +555,134 @@ public class LogFile {
     /** Recover the database system by ensuring that the updates of
         committed transactions are installed and that the
         updates of uncommitted transactions are not installed.
+        The implementation should:
+            1. Read the last checkpoint, if any.
+            2. Scan forward from the checkpoint (or start of log file, if no checkpoint) to build the set of loser transactions. 
+               Re-do updates during this pass. You can safely start re-do at the checkpoint because LogFile.logCheckpoint() flushes all dirty buffers to disk.
+            3. Un-do the updates of loser transactions.
+
+
     */
     public void recover() throws IOException {
         synchronized (Database.getBufferPool()) {
             synchronized (this) {
                 recoveryUndecided = false;
                 // some code goes here
+                int  recordType;
+                long transactionIdNum;
+                long checkPointOffset;
+                long recordStartOffset;
+                long currentOffset;
+                int  size;
+
+                raf.seek(0);
+                checkPointOffset = raf.readLong();
+                //System.out.println(checkPointOffset);
+                if (checkPointOffset != NO_CHECKPOINT_ID) {
+                    raf.seek(checkPointOffset);
+                    recordType       = raf.readInt();
+                    transactionIdNum = raf.readLong();
+                    
+                    size = raf.readInt();
+                    for (int i = 0; i < size; i++) {
+                        long key  = raf.readLong();
+                        long firstRecordOffset = raf.readLong();
+                        tidToFirstLogRecord.put(key, firstRecordOffset);
+                    }
+
+                    // currentOffset
+                    raf.readLong();
+                }
+
+
+                currentOffset = raf.getFilePointer();
+
+                // re-do
+                while (currentOffset != raf.length()) {
+                    recordType       = raf.readInt();
+                    transactionIdNum = raf.readLong();
+
+                    if (recordType == ABORT_RECORD) {
+                        System.out.println("[recover] redo: ABORT_RECORD");
+                        recordStartOffset = raf.readLong();
+                        currentOffset = raf.getFilePointer();
+                        tidToFirstLogRecord.remove(transactionIdNum);
+                    }
+                    else if (recordType == COMMIT_RECORD) {
+                        System.out.println("[recover] redo: COMMIT_RECORD");
+                        recordStartOffset = raf.readLong();
+                        currentOffset = raf.getFilePointer();
+                        tidToFirstLogRecord.remove(transactionIdNum);
+                    }
+                    else if (recordType == UPDATE_RECORD) {
+                        System.out.println("[recover] redo: UPDATE_RECORD");
+                        Page beforePage = readPageData(raf);
+                        Page afterPage  = readPageData(raf);
+                        Database.getBufferPool().discardPage(afterPage.getId());
+                        Database.getBufferPool().buffers.put(beforePage.getId().hashCode(), afterPage);
+                        recordStartOffset = raf.readLong();
+                        currentOffset = raf.getFilePointer();
+                    }
+                    else if (recordType == BEGIN_RECORD) {
+                        System.out.println("[recover] redo: BEGIN_RECORD");
+                        recordStartOffset = raf.readLong();
+                        currentOffset     = raf.getFilePointer();
+                        tidToFirstLogRecord.put(transactionIdNum, recordStartOffset);
+                    }
+                    else {
+                        System.out.println("[recover] During redo, not expected log record:"+recordType);
+                    }
+                }
+                
+                //undo
+                Set<Long> keys = tidToFirstLogRecord.keySet();
+                Iterator<Long> undoRecordIt = keys.iterator();
+                long rollbackTransactionIdNum;
+
+                while (undoRecordIt.hasNext()) {
+                    rollbackTransactionIdNum = undoRecordIt.next();
+                    long offset;
+                    long beginOffset = tidToFirstLogRecord.get(rollbackTransactionIdNum);
+
+                    raf.seek(beginOffset);
+                    offset = beginOffset;
+
+                    while (offset != currentOffset) {
+                        recordType       = raf.readInt();
+                        transactionIdNum = raf.readLong();
+
+                        if (recordType == ABORT_RECORD) {
+                            System.out.println("[recover] undo: ABORT_RECORD");
+                            raf.readLong();
+                            offset = raf.getFilePointer();
+                        }
+                        else if (recordType == COMMIT_RECORD) {
+                            System.out.println("[reover] undo: COMMIT_RECORD");
+                            raf.readLong();
+                            offset = raf.getFilePointer();
+                        }
+                        else if (recordType == UPDATE_RECORD) {
+                            System.out.println("[recover] undo: UPDATE_RECORD");
+                            Page beforePage = readPageData(raf);
+                            Page afterPage  = readPageData(raf);
+                            if (transactionIdNum == rollbackTransactionIdNum) {
+                                Database.getBufferPool().discardPage(afterPage.getId());
+                                Database.getBufferPool().buffers.put(beforePage.getId().hashCode(), beforePage);
+                            }
+                            raf.readLong();
+                            offset = raf.getFilePointer();
+                        }
+                        else if (recordType == BEGIN_RECORD) {
+                            System.out.println("[recover] undo: BEGIN_RECORD");
+                            raf.readLong();
+                            offset = raf.getFilePointer();
+                        }
+                        else {
+                            System.out.println("[recover] During undo, not expected log record:"+recordType);
+                        }
+                        
+                    }
+                }
             }
          }
     }
