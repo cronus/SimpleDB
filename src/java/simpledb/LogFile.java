@@ -653,26 +653,29 @@ public class LogFile {
                     long beginOffset = tidToFirstLogRecord.get(rollbackTransactionIdNum);
                     undoRecordIt.remove();
 
-                    raf.seek(beginOffset);
-                    offset = beginOffset;
+                    //raf.seek(beginOffset);
+                    //offset = beginOffset;
+                    offset = currentOffset;
 
-                    while (offset != currentOffset) {
+                    //System.out.println("current offset:"+currentOffset);
+                    while (offset != beginOffset) {
+                        raf.seek(offset - LONG_SIZE);
+                        recordStartOffset = raf.readLong();
+                        raf.seek(recordStartOffset);
                         recordType       = raf.readInt();
                         transactionIdNum = raf.readLong();
 
                         if (recordType == ABORT_RECORD) {
                             //System.out.println("[recover] undo: ABORT_RECORD tid num:"+transactionIdNum);
-                            raf.readLong();
-                            offset = raf.getFilePointer();
-                            if (transactionIdNum == rollbackTransactionIdNum)
-                                break;
+                            offset = raf.readLong();
+                            //if (transactionIdNum == rollbackTransactionIdNum)
+                            //    break;
                         }
                         else if (recordType == COMMIT_RECORD) {
                             //System.out.println("[recover] undo: COMMIT_RECORD tid num:"+transactionIdNum);
-                            raf.readLong();
-                            offset = raf.getFilePointer();
-                            if (transactionIdNum == rollbackTransactionIdNum)
-                                break;
+                            offset = raf.readLong();
+                            //if (transactionIdNum == rollbackTransactionIdNum)
+                            //    break;
                         }
                         else if (recordType == UPDATE_RECORD) {
                             //System.out.println("[recover] undo: UPDATE_RECORD tid num:"+transactionIdNum);
@@ -682,18 +685,26 @@ public class LogFile {
                                 Database.getBufferPool().discardPage(afterPage.getId());
                                 Database.getBufferPool().buffers.put(beforePage.getId().hashCode(), beforePage);
                             }
-                            raf.readLong();
-                            offset = raf.getFilePointer();
+                            offset = raf.readLong();
                         }
                         else if (recordType == BEGIN_RECORD) {
                             //System.out.println("[recover] undo: BEGIN_RECORD tid num:"+transactionIdNum);
-                            raf.readLong();
-                            offset = raf.getFilePointer();
+                            offset = raf.readLong();
+                        }
+                        else if (recordType == CHECKPOINT_RECORD) {
+                            //System.out.println("[recover] undo:"+transactionIdNum+":CHECKPOINT_RECORD");
+                            size = raf.readInt();
+                            for (int i = 0; i < size; i++) {
+                                // transaction id number
+                                raf.readLong();
+                                // first record offset
+                                raf.readLong();
+                            }
+                            offset = raf.readLong();
                         }
                         else {
-                            //System.out.println("[recover] During undo, not expected log record:"+recordType);
+                            System.out.println("[recover] During undo, not expected log record:"+recordType);
                         }
-                        
                     }
                 }
             }
