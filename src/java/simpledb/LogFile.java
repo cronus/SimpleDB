@@ -538,6 +538,7 @@ public class LogFile {
                         System.out.println("[rollback] Not expected log record:"+recordType);
                     }
                 }
+                raf.seek(currentOffset);
             }
         }
     }
@@ -706,6 +707,7 @@ public class LogFile {
                             System.out.println("[recover] During undo, not expected log record:"+recordType);
                         }
                     }
+                    raf.seek(currentOffset);
                 }
             }
          }
