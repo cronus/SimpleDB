@@ -603,28 +603,31 @@ public class LogFile {
                     transactionIdNum = raf.readLong();
 
                     if (recordType == ABORT_RECORD) {
-                        System.out.println("[recover] redo: ABORT_RECORD");
+                        System.out.println("[recover] redo: ABORT_RECORD tid num:"+transactionIdNum);
                         recordStartOffset = raf.readLong();
-                        currentOffset = raf.getFilePointer();
+                        currentOffset     = raf.getFilePointer();
                         tidToFirstLogRecord.remove(transactionIdNum);
                     }
                     else if (recordType == COMMIT_RECORD) {
-                        System.out.println("[recover] redo: COMMIT_RECORD");
+                        System.out.println("[recover] redo: COMMIT_RECORD tid num:"+transactionIdNum);
                         recordStartOffset = raf.readLong();
                         currentOffset = raf.getFilePointer();
                         tidToFirstLogRecord.remove(transactionIdNum);
                     }
                     else if (recordType == UPDATE_RECORD) {
-                        System.out.println("[recover] redo: UPDATE_RECORD");
+                        System.out.println("[recover] redo: UPDATE_RECORD tid num:"+transactionIdNum);
+                        if (!tidToFirstLogRecord.containsKey(transactionIdNum))
+                            System.out.println("Error:"+transactionIdNum);
                         Page beforePage = readPageData(raf);
                         Page afterPage  = readPageData(raf);
+                        recordStartOffset = raf.readLong();
+                        currentOffset     = raf.getFilePointer();
+
                         Database.getBufferPool().discardPage(afterPage.getId());
                         Database.getBufferPool().buffers.put(beforePage.getId().hashCode(), afterPage);
-                        recordStartOffset = raf.readLong();
-                        currentOffset = raf.getFilePointer();
                     }
                     else if (recordType == BEGIN_RECORD) {
-                        System.out.println("[recover] redo: BEGIN_RECORD");
+                        System.out.println("[recover] redo: BEGIN_RECORD tid num:"+transactionIdNum);
                         recordStartOffset = raf.readLong();
                         currentOffset     = raf.getFilePointer();
                         tidToFirstLogRecord.put(transactionIdNum, recordStartOffset);
@@ -636,6 +639,7 @@ public class LogFile {
                 
                 //undo
                 Set<Long> keys = tidToFirstLogRecord.keySet();
+                System.out.println(keys);
                 Iterator<Long> undoRecordIt = keys.iterator();
                 long rollbackTransactionIdNum;
 
