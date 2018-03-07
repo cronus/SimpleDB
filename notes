@@ -187,3 +187,15 @@ Something like that. Of course you need to free that when you are done.
 
 23. FileChannel
     A channle for reading, writing, mapping, and manipulating a file 
+
+24. How to avoid “ConcurrentModificationException” while removing elements from `ArrayList` while iterating it?
+    Use an Iterator and call remove():
+
+        Iterator<String> iter = myArrayList.iterator();
+        while (iter.hasNext()) {
+            String str = iter.next();
+        
+            if (someCondition)
+                iter.remove();
+        }
+

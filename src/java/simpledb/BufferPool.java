@@ -331,18 +331,23 @@ public class BufferPool {
             Page p  = buffers.get(key);
             //System.out.println("key:"+key+" page:"+p);
             if (commit) {
-                if (p.isDirty() != null && p.isDirty().equals(tid)) {
+                if (p.isDirty() == null) {
+                    // add based on instructions of lab6 part 1
+                    // use current page contents as the before-image
+                    // for the next transaction that modifies this page.
+                    p.setBeforeImage();
+                }
+                else if (p.isDirty().equals(tid)) {
                     //System.out.println(p);
                     //byte[] data = p.getPageData();
                     //for (byte b: data)
                     //    System.out.println("transactionComplete:"+b);
+                    flushPage(p.getId());
 
                     // add based on instructions of lab6 part 1
                     // use current page contents as the before-image
                     // for the next transaction that modifies this page.
                     p.setBeforeImage();
-
-                    flushPage(p.getId());
                 }
             }
             else {
@@ -413,6 +418,7 @@ public class BufferPool {
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for lab1
+        //System.out.println(tid);
         Catalog ctlg = Database.getCatalog();
         DbFile f  = ctlg.getDatabaseFile(tableId);
         ArrayList<Page> dirtyPages = f.insertTuple(tid, t);
@@ -463,7 +469,8 @@ public class BufferPool {
         while (keys.hasNext()) {
            int key = keys.next();
            Page p  = buffers.get(key);
-           flushPage(p.getId());
+           if (p.isDirty() != null)
+               flushPage(p.getId());
         }
 
     }
@@ -514,6 +521,16 @@ public class BufferPool {
     public synchronized  void flushPages(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for lab1|lab2
+
+        //System.out.println("[flushPages]flushPage tid:"+tid.getId());
+        Iterator<Integer> keys = buffers.keySet().iterator();
+        while (keys.hasNext()) {
+            int key = keys.next();
+            Page p  = buffers.get(key);
+            if (p.isDirty() != null && p.isDirty().equals(tid)) {
+                flushPage(p.getId());
+            }
+        }
     }
 
     /**
@@ -526,25 +543,25 @@ public class BufferPool {
         //System.out.println("evict page");
         Iterator<Integer> keys = buffers.keySet().iterator();
         while (keys.hasNext()) {
-           int key = keys.next();
-           Page p  = buffers.get(key);
-           //System.out.println("pid:"+p.getId().hashCode()+" tid:"+p.isDirty());
-           //if (p.isDirty() != null) {
-           //    //System.out.println("key:"+key);
-           //    flushPage(p.getId());
-           //    buffers.remove(p.getId().hashCode());
-           //    break;
-           //}
-           //else {
-           //    discardPage(p.getId());
-           //    break;
-           //}
+            int key = keys.next();
+            Page p  = buffers.get(key);
+            //System.out.println("pid:"+p.getId().hashCode()+" tid:"+p.isDirty());
+            //if (p.isDirty() != null) {
+            //    //System.out.println("key:"+key);
+            //    flushPage(p.getId());
+            //    buffers.remove(p.getId().hashCode());
+            //    break;
+            //}
+            //else {
+            //    discardPage(p.getId());
+            //    break;
+            //}
 
-           // Implement NO STEAL
-           if (p.isDirty() == null) {
-               discardPage(p.getId());
-               return;
-           }
+            // Implement NO STEAL
+            if (p.isDirty() == null) {
+                discardPage(p.getId());
+                return;
+            }
         }
         throw new DbException("All pages are dirty in buffer pool!");
     }
